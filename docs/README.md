@@ -1,14 +1,17 @@
-# docs
+# Fonti e tracciabilità
 
-Specifica del progetto: unica fonte di verità per casi d'uso, modelli e contratti.
-Si modifica con una PR approvata dai PM.
+Gli originali RAD e SDD sono aggiornati dal team in OneDrive. I TM versionano qui trasposizioni testuali verificate e modelli
+approvati, citando versione dell'originale, ID e commit della snapshot Git.
 
-```
-rad/uc/       un file per caso d'uso (usa _TEMPLATO_UC.md)
-modelli/      class e sequence diagram in PlantUML (.puml)
-sdd/          component e deployment diagram, algoritmo AI, scelte di stack
-test/         category partition e test frame (cp_NomeCaso.md)
-contratti/    API tra frontend, backend e ai-service (OpenAPI)
-```
+- [rad/uc](rad/uc/) contiene i casi d'uso con gli ID originali.
+- [rad/modelli](rad/modelli/) accoglie Activity, Statechart, Sequence e Class Diagram RAD applicabili.
+- [sdd/modelli](sdd/modelli/) accoglie Design Goal, sottosistemi, livelli,
+  Component e Deployment, e Class Diagram ristrutturato a basso livello.
+- [test](test/) accoglie Category Partition, Test Frame e piano di test.
+- [design-patterns](design-patterns/) registra scelte e motivazioni dei pattern.
+- [contratti](contratti/) accoglie interfacce e API approvate.
 
-Niente dati personali o credenziali: il repository è pubblico.
+Le directory sono predisposte per le prossime consegne. Un titolo o un nome
+di file non dimostra l'esistenza di un requisito. Collega ogni decisione,
+cambiamento o test all'ID e alla versione della fonte da cui deriva.
+Segnala al TM o al PM ogni artefatto mancante o incongruente.

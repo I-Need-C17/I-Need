@@ -1,44 +1,36 @@
-name: Task per agente
-description: Implementazione di un caso d'uso (o di una sua parte) con gli agenti
-title: "UC_XX [componente]: "
-labels: ["task-agente"]
+name: Task agente
+description: Proponi un task da pianificare e verificare.
+title: "[Task] "
+labels: [task-agente]
 body:
-  - type: input
-    id: uc
+  - type: markdown
     attributes:
-      label: Caso d'uso
-      placeholder: UC_GM_1 CercaHostIdonei
-    validations:
-      required: true
+      value: Scegli un TM in Assignees. Il PM assegna una sola label di area.
   - type: dropdown
-    id: componente
+    id: tipo
     attributes:
-      label: Componente
-      options:
-        - backend
-        - frontend
-        - ai-service
+      label: Tipo
+      options: [Applicativo, Documentazione, Governance]
     validations:
       required: true
   - type: textarea
-    id: specifica
+    id: obiettivo
     attributes:
-      label: Specifica (file di docs/ da leggere)
-      placeholder: |
-        docs/rad/uc/UC_GM_1.md
-        docs/modelli/seq_cerca_host.puml
+      label: Obiettivo e criteri
+      description: Indica risultato atteso, criteri di accettazione ed eventuali blocchi.
     validations:
       required: true
   - type: textarea
-    id: ambito
+    id: file
     attributes:
-      label: Ambito (classi, componenti o endpoint da toccare)
+      label: File
+      description: "Una riga File: percorso per ogni candidato. Per il Tester, una riga Test: percorso per ogni nuovo test."
     validations:
       required: true
   - type: textarea
-    id: verifica
+    id: fonti
     attributes:
-      label: Test frame da coprire
-      placeholder: TF01-TF10 di docs/test/cp_cerca_host.md
+      label: Fonti e frame
+      description: "Indica Requisito: ID e Riferimento: percorso per le fonti pertinenti. Per il Tester aggiungi CP, TF e Frame come nel README."
     validations:
       required: true

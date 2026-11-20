@@ -1,22 +1,18 @@
-## Caso d'uso, componente e issue
-UC_XX NomeCaso, componente: backend / frontend / ai-service, closes #NN
+## Tracciabilità
 
-## Piano
-- Piano approvato da (team member):
+- Issue collegata
+- Piano e approvazione TM
+- File, modelli e snapshot
+- Agenti coinvolti
 
-## Artefatti usati
-- File di `docs/` letti:
-- Test frame coperti:
+## Verifiche
 
-## Agenti
-- implementazione: agente / persona
-- test: agente `tester` / persona
-- tentativi falliti prima del verde:
+- ID frame, esiti e SHA verificato
+- Comandi eseguiti, esiti e omissioni motivate
+- Deviazioni autorizzate e rischi
 
-## Modifiche ai modelli
-- (nessuna / elenco: vanno proposte in una PR separata su `docs/`)
+## Prima della revisione
 
-## Dichiarazione
-- [ ] Ho letto e so spiegare tutto il codice
-- [ ] Il controllo CI è verde
-- [ ] Chi approva è una persona diversa dall'autore
+- [ ] Ho compreso e revisionato la modifica, compresi i test.
+- [ ] Ho verificato l'ambito autorizzato e la coerenza con le fonti.
+- [ ] Ho collegato le evidenze al commit finale.
