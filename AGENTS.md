@@ -19,8 +19,10 @@ da riesaminare quando il team riprenderà lo stack.
   cambiare contratti o estendere l'ambito.
 - Gli agenti di un task applicativo devono lasciare ai PM le modifiche a
   `AGENTS.md`, `.github/` e `docs/`. Segnala nella PR le modifiche ai modelli
-  da concordare prima del merge.
-- Genera un test per ogni frame dagli esiti attesi. In caso di divergenza,
+  da concordare prima del merge. Sospendi il task per una decisione esplicita
+  del PM con il team se codice e modelli sono in conflitto.
+- Collega ogni frame eseguibile a un test con asserzioni derivate dagli esiti attesi.
+  Per i frame non eseguibili registra motivo ed evidenza verificabile. In caso di divergenza,
   riporta frame, risultato atteso e risultato ottenuto. Mantieni i test
   esistenti e chiedi una revisione esplicita se serve aggiornarli.
 - Lascia l'approvazione a un revisore umano diverso dall'autore della PR.

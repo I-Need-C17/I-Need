@@ -39,6 +39,21 @@ body:
     id: verifica
     attributes:
       label: Category Partition, test frame ed esiti attesi
-      placeholder: docs/test/cp_cerca_host.md — TF01-TF10 e relativi esiti attesi
+      description: Una riga per frame, con identificativo ed esito atteso.
+      placeholder: "TF01 | Esito atteso dalla specifica"
+    validations:
+      required: true
+  - type: input
+    id: revisione
+    attributes:
+      label: Commit delle specifiche
+      description: SHA completo di un commit già integrato in main.
+    validations:
+      required: true
+  - type: textarea
+    id: accettazione
+    attributes:
+      label: Criteri di accettazione
+      description: Indica gli esiti osservabili che il TM deve verificare.
     validations:
       required: true

@@ -5,9 +5,9 @@ required_files=(
   README.md AGENTS.md docs/flusso-agentico.md
   .github/CODEOWNERS .github/copilot-instructions.md
   .github/ISSUE_TEMPLATE/{config,task-agente}.yml .github/pull_request_template.md
-  .github/scripts/check-phase{,.test}.cjs
+  .github/scripts/{check-phase,role-context}{,.test}.cjs .github/scripts/run-isolated-role.sh
   .github/agents/{pianificatore,implementatore,tester,revisore}.agent.md
-  .github/workflows/{ci,piano,implementa,test,revisione,controllo-fase,copilot-setup-steps}.yml
+  .github/workflows/{ci,piano,implementa,test,revisione,controllo-fase}.yml
 )
 for file in "${required_files[@]}"; do
   test -s "$file" || { printf 'File richiesto mancante o vuoto: %s\n' "$file" >&2; exit 1; }

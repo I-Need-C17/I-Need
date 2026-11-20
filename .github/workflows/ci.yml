@@ -22,3 +22,5 @@ jobs:
         run: bash .github/scripts/check-bootstrap.sh
       - name: Verifica i checkpoint
         run: node --test .github/scripts/check-phase.test.cjs
+      - name: Collauda i contesti isolati con dati fittizi
+        run: node --test .github/scripts/role-context.test.cjs
