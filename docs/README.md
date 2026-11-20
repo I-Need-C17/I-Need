@@ -1,7 +1,8 @@
 # docs
 
 Specifica del progetto: unica fonte di verità per casi d'uso, modelli e contratti.
-Si modifica con una PR approvata dai PM.
+Si modifica con una PR approvata dai PM. Crea ciascuna cartella quando
+aggiungi il primo artefatto corrispondente.
 
 ```
 rad/uc/       un file per caso d'uso (usa _TEMPLATO_UC.md)

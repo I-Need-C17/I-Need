@@ -1,8 +1,6 @@
 # Flusso agentico di I-Need
 
-La prima fase riguarda il repository pubblico e i checkpoint umani. Le Issue
-degli scheletri applicativi (#1, #2 e #3) restano in backlog. La loro apertura
-e le note nei componenti non autorizzano l'avvio del lavoro sullo stack.
+La prima fase riguarda il repository pubblico e i checkpoint umani.
 
 ## 1. Bootstrap e impostazioni GitHub
 
@@ -139,10 +137,5 @@ cambiamento. Il requisito di copertura dei frame vale per i task applicativi.
    lascia vuota questa variabile. Il TM continua ad approvare il piano. Prova anche un evento da
    un account non autorizzato, che deve fermarsi prima della generazione.
    Estendi agli altri ruoli dopo aver verificato permessi, esiti e costi.
-
-Il caso del team C-01 suggerisce di verificare versione della CLI, modello
-disponibile, autenticazione e percorso della richiesta come prerequisiti
-distinti. In caso di 502, conserva l'esito e riprova un'operazione di lettura
-con input fittizio. La pipeline di I-Need non introduce `gh-aw` né richieste AI.
 
 [Autenticazione di Copilot CLI](https://docs.github.com/en/copilot/how-tos/copilot-cli/set-up-copilot-cli/authenticate-copilot-cli)

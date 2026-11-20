@@ -6,9 +6,8 @@ nei test. Tieni credenziali, chiavi e dati personali fuori da file, Issue e PR.
 
 ## Ambito corrente
 
-La priorità è la pipeline GitHub. I task per gli scheletri applicativi sono
-rinviati. Le note tecniche nei componenti e il contratto OpenAPI sono materiale
-da riesaminare quando il team riprenderà lo stack.
+La fase corrente riguarda la pipeline GitHub. I PM definiranno stack e
+contratti applicativi quando saranno disponibili i modelli approvati.
 
 ## Lavoro su un task
 
