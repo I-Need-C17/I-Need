@@ -1,46 +1,42 @@
-# I-Need
+# I-Need (C-17)
 
-I-Need è un progetto del corso di Gestione dei Progetti Software dell'Università
-di Salerno. Il repository è pubblico. Usa dati fittizi nei task, negli esempi e
-nei test. Tieni credenziali, chiavi e dati personali fuori da file, Issue e PR.
+## Contesto
 
-## Ambito corrente
+I-Need è il progetto GPS/IS dell'Università di Salerno per la coabitazione
+solidale. Il repository è pubblico. Usa solo dati fittizi.
+Consulta [l'indice delle specifiche](docs/README.md) e la Issue del task.
 
-La fase corrente riguarda la pipeline GitHub. I PM definiranno stack e
-contratti applicativi quando saranno disponibili i modelli approvati.
+## Stack e comandi
 
-## Lavoro su un task
+Lo stack applicativo è da inizializzare. Usa solo versioni e comandi
+approvati e presenti nel repository. Segnala le verifiche non configurate.
 
-- Leggi il caso d'uso, i modelli, la Category Partition e gli esiti attesi
-  indicati nell'Issue. Segnala informazioni mancanti o incoerenti.
-- Rimani nell'ambito del piano approvato. Lavora nel branch del task e cita
-  nella PR i file di `docs/` usati. Chiedi prima di aggiungere dipendenze,
-  cambiare contratti o estendere l'ambito.
-- Gli agenti di un task applicativo devono lasciare ai PM le modifiche a
-  `AGENTS.md`, `.github/` e `docs/`. Segnala nella PR le modifiche ai modelli
-  da concordare prima del merge. Sospendi il task per una decisione esplicita
-  del PM con il team se codice e modelli sono in conflitto.
-- Collega ogni frame eseguibile a un test con asserzioni derivate dagli esiti attesi.
-  Per i frame non eseguibili registra motivo ed evidenza verificabile. In caso di divergenza,
-  riporta frame, risultato atteso e risultato ottenuto. Mantieni i test
-  esistenti e chiedi una revisione esplicita se serve aggiornarli.
-- Lascia l'approvazione a un revisore umano diverso dall'autore della PR.
-  Il merge su `main` spetta ai PM.
+## Struttura
 
-## Fasi
+`backend/`, `frontend/` e `ai-service/` ospitano i tre componenti.
+`docs/` raccoglie fonti e modelli approvati.
+I profili dei ruoli sono in [.github/agents](.github/agents/).
 
-1. Il PM apre il task, assegna un TM e applica `fase:piano`. Il piano va
-   pubblicato in un commento della Issue che inizi con `## Piano`.
-2. Il TM assegnato approva quel commento come indicato nella
-   [procedura](docs/flusso-agentico.md), quindi applica `fase:implementazione`.
-   Il lavoro confluisce in una Draft PR verso `main`.
-3. Il TM assegna `fase:test` alla Draft PR. Il tester usa la Category Partition,
-   i risultati attesi e le firme pubbliche del codice.
-4. Il TM verifica i test e porta la PR a **Ready for review**. Il revisore
-   confronta il diff con i modelli e la CI esegue i controlli disponibili.
-5. Un'altra persona approva la PR. Il PM verifica la Definition of Done e fa
-   il merge.
+## Convenzioni
 
-I workflow attuali validano i passaggi e scrivono il loro esito in Actions.
-Per le attività riservate agli agenti il PM o il TM pubblica manualmente
-l'artefatto concordato durante il collaudo.
+Lavora nel branch del task. Collega Issue, revisione delle fonti, file
+modificati, ID dei frame e risultati nel piano e nella PR. Usa percorsi
+relativi esatti. Segui nomi e interfacce dei modelli approvati.
+
+## Regole
+
+- **Sempre** rispetta l'ambito approvato e riporta gli esiti effettivi. Se una
+  fonte manca, è ambigua o contraddice il codice, sospendi la fase, indica
+  l'evidenza e chiedi al TM o al PM una decisione.
+- **Chiedi prima** di estendere l'ambito o intervenire su dipendenze,
+  modelli, contratti, test esistenti e configurazione.
+- **Mai** inserire credenziali o dati personali reali, alterare modelli o
+  test senza autorizzazione, cambiare test per farli passare, inviare push
+  a `main` o automatizzare approvazione e merge.
+
+## Quando un task è finito (DoD)
+
+La PR collega Issue e approvazione TM, rispetta l'ambito, documenta le
+verifiche eseguite e le omissioni motivate. Ogni frame applicabile ha un
+esito tracciabile. CI e revisione si riferiscono al commit finale e
+l'approvazione proviene da una persona diversa dall'autore.

@@ -1,15 +1,64 @@
-name: Test
+name: Test indipendenti
 on:
-  pull_request_target:
-    types: [labeled]
+  pull_request:
     branches: [main]
-permissions:
-  contents: read
-  issues: read
-  pull-requests: read
+    types: [labeled]
+  workflow_call:
+
+permissions: {}
+
 jobs:
-  checkpoint:
-    if: ${{ github.event.label.name == 'fase:test' }}
-    uses: ./.github/workflows/controllo-fase.yml
-    with:
-      fase: test
+  segnale-test:
+    if: >-
+      github.event_name == 'pull_request' && github.event.label.name == 'fase:test' &&
+      github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.head_ref, 'agent/issue-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 2
+    steps:
+      - run: echo "Fase test richiesta sulla Draft PR."
+
+  tester:
+    if: >-
+      github.event_name == 'workflow_run' && github.ref == 'refs/heads/main' &&
+      github.event.workflow_run.name == 'Test indipendenti'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 38
+    environment: copilot-student
+    permissions:
+      actions: read
+      contents: write
+      issues: read
+      pull-requests: write
+    concurrency:
+      group: i-need-pr-${{ github.event.workflow_run.head_branch }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Convalida identità, ambito e artefatti
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/workflow.py prepare tester
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.guard.outputs.ai == 'true'
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Installa Copilot CLI
+        if: steps.guard.outputs.ai == 'true'
+        run: npm install --prefix "$RUNNER_TEMP/copilot-cli" --ignore-scripts --no-audit --no-fund @github/copilot@1.0.114
+      - name: Esegui il profilo tester
+        if: steps.guard.outputs.ai == 'true'
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: python3 .github/scripts/workflow.py copilot tester
+      - name: Ricontrolla e registra la fase
+        if: steps.guard.outputs.done == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/workflow.py finish tester

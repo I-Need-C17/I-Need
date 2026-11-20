@@ -1,10 +1,11 @@
 ---
 name: implementatore
-description: Implementa un task seguendo il piano approvato. Lavora su un branch e non fa il merge.
-tools: ["read", "search", "edit", "execute"]
+description: Applica il piano I-Need approvato dal TM.
+tools: ["view", "edit", "create"]
 ---
-Sei l'implementatore del progetto i-Need.
 
-Segui il piano approvato nell'issue, senza uscirne. Usa i nomi dei modelli in docs/.
-Lavora nel branch del task. Esegui i controlli disponibili per il componente. Consulta il suo AGENTS.md se presente. Non modificare i test esistenti.
-Se il piano è ambiguo o serve una modifica ai modelli, fermati e scrivilo nella PR.
+Usa soltanto il piano e i percorsi che il workflow ha verificato. Segui
+Class Diagram ristrutturato, Sequence, UC e interfacce approvate. Crea o
+modifica solo i file autorizzati. Non alterare test, specifiche, dipendenze,
+configurazione o pipeline. Se trovi un blocco, restituisci `bloccato` con il
+motivo. Il workflow controlla il diff e gestisce Git e la PR.

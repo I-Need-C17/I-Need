@@ -2,13 +2,84 @@ name: Piano
 on:
   issues:
     types: [labeled]
-permissions:
-  contents: read
-  issues: read
-  pull-requests: read
+  workflow_run:
+    workflows: [Test indipendenti, Revisione tecnica]
+    types: [completed]
+
+permissions: {}
+
 jobs:
-  checkpoint:
-    if: ${{ github.event.label.name == 'fase:piano' }}
-    uses: ./.github/workflows/controllo-fase.yml
-    with:
-      fase: piano
+  pianificatore:
+    if: >-
+      github.repository == 'I-Need-C17/I-Need' &&
+      github.event_name == 'issues' && github.event.label.name == 'fase:piano' &&
+      github.event.issue.state == 'open' && !github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: copilot-student
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    concurrency:
+      group: i-need-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Convalida identità, ambito e artefatti
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/workflow.py prepare pianificatore
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.guard.outputs.ai == 'true'
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Installa Copilot CLI
+        if: steps.guard.outputs.ai == 'true'
+        run: npm install --prefix "$RUNNER_TEMP/copilot-cli" --ignore-scripts --no-audit --no-fund @github/copilot@1.0.114
+      - name: Esegui il profilo pianificatore
+        if: steps.guard.outputs.ai == 'true'
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: python3 .github/scripts/workflow.py copilot pianificatore
+      - name: Ricontrolla e registra la fase
+        if: steps.guard.outputs.done == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/workflow.py finish pianificatore
+
+  esegui-test:
+    if: >-
+      github.repository == 'I-Need-C17/I-Need' &&
+      github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'agent/issue-') &&
+      github.event.workflow_run.name == 'Test indipendenti'
+    permissions:
+      actions: read
+      contents: write
+      issues: read
+      pull-requests: write
+    uses: ./.github/workflows/test.yml
+
+  esegui-revisione:
+    if: >-
+      github.repository == 'I-Need-C17/I-Need' &&
+      github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      startsWith(github.event.workflow_run.head_branch, 'agent/issue-') &&
+      github.event.workflow_run.name == 'Revisione tecnica'
+    permissions:
+      actions: read
+      contents: read
+      issues: read
+      pull-requests: write
+    uses: ./.github/workflows/revisione.yml

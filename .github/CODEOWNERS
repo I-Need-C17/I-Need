@@ -1,3 +1,9 @@
-AGENTS.md   @ChoaibGoumri @saldm04
-/.github/   @ChoaibGoumri @saldm04
-/docs/      @ChoaibGoumri @saldm04
+# L'ultima regola applicabile prevale.
+/AGENTS.md @I-Need-C17/project-managers
+/README.md @I-Need-C17/project-managers
+/.gitignore @I-Need-C17/project-managers
+/.github/ @I-Need-C17/project-managers
+/docs/ @I-Need-C17/project-managers
+/backend/ @I-Need-C17/tech-members
+/frontend/ @I-Need-C17/tech-members
+/ai-service/ @I-Need-C17/tech-members

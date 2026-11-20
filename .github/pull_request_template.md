@@ -1,27 +1,18 @@
-## Caso d'uso e componente
+## Tracciabilità
 
-<!-- Per i task agentici indica UC, componente e una singola Issue come sotto.
-     Per la manutenzione rimuovi il segnaposto. -->
-Closes #NN
+- Issue collegata
+- Piano e approvazione TM
+- File, modelli e snapshot
+- Agenti coinvolti
 
-## Piano e modifiche
+## Verifiche
 
-- Piano approvato e revisione delle specifiche:
-- Modelli utilizzati e modifiche effettuate:
-- Agenti utilizzati, tentativi falliti e correzioni:
-- Modifiche motivate ai test preesistenti:
-- Difformità e decisione del PM con il team (link):
-- Run CI ed esiti:
+- ID frame, esiti e SHA verificato
+- Comandi eseguiti, esiti e omissioni motivate
+- Deviazioni autorizzate e rischi
 
-## Verifica dei frame
+## Prima della revisione
 
-<!-- Una riga per ogni ID della Issue. Formati:
-TF01 | superato | riferimento al test e all'asserzione | esito ottenuto
-TF02 | non eseguibile | motivazione | evidenza verificabile
-Durante il lavoro registra anche i fallimenti. Il TM verifica le evidenze. -->
-
-## Verifica prima di Ready for review
-
-- [ ] Ho verificato i test e gli esiti attesi
-- [ ] Ho letto e so spiegare le modifiche
-- [ ] La CI ha eseguito i controlli previsti per questo cambiamento
+- [ ] Ho compreso e revisionato la modifica, compresi i test.
+- [ ] Ho verificato l'ambito autorizzato e la coerenza con le fonti.
+- [ ] Ho collegato le evidenze al commit finale.

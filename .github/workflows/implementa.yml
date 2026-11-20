@@ -2,13 +2,52 @@ name: Implementazione
 on:
   issues:
     types: [labeled]
-permissions:
-  contents: read
-  issues: read
-  pull-requests: read
+
+permissions: {}
+
 jobs:
-  checkpoint:
-    if: ${{ github.event.label.name == 'fase:implementazione' }}
-    uses: ./.github/workflows/controllo-fase.yml
-    with:
-      fase: implementa
+  implementatore:
+    if: >-
+      github.repository == 'I-Need-C17/I-Need' &&
+      github.event.label.name == 'fase:implementazione' &&
+      github.event.issue.state == 'open' && !github.event.issue.pull_request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: copilot-student
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      pull-requests: write
+    concurrency:
+      group: i-need-issue-${{ github.event.issue.number }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Convalida identità, ambito e artefatti
+        id: guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/workflow.py prepare implementatore
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        if: steps.guard.outputs.ai == 'true'
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Installa Copilot CLI
+        if: steps.guard.outputs.ai == 'true'
+        run: npm install --prefix "$RUNNER_TEMP/copilot-cli" --ignore-scripts --no-audit --no-fund @github/copilot@1.0.114
+      - name: Esegui il profilo implementatore
+        if: steps.guard.outputs.ai == 'true'
+        env:
+          COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
+        run: python3 .github/scripts/workflow.py copilot implementatore
+      - name: Ricontrolla e registra la fase
+        if: steps.guard.outputs.done == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/workflow.py finish implementatore
