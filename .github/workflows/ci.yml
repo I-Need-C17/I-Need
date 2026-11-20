@@ -15,7 +15,7 @@ concurrency:
 jobs:
   ci-ok:
     runs-on: ubuntu-24.04
-    timeout-minutes: 12
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -29,14 +29,51 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tgz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/actionlint.tgz" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint"
-      - name: Verifica repository e comandi approvati
+      - name: Verifica file, link e diff
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          TARGET_SHA: ${{ github.sha }}
         run: |
-          if [[ -z "$BASE_SHA" ]]; then
-            BASE_SHA="$(git merge-base "$TARGET_SHA" origin/main)"
-          fi
-          python3 .github/scripts/workflow.py ci "$BASE_SHA" "$TARGET_SHA"
-      - name: Verifica i guardrail deterministici
-        run: python3 -m unittest discover -s .github/scripts -p 'test_*.py'
+          set -euo pipefail
+          git diff --check "${BASE_SHA:-$(git merge-base HEAD origin/main)}" HEAD
+          for file in AGENTS.md README.md .github/CODEOWNERS .github/ISSUE_TEMPLATE/task-agente.yml docs/README.md; do
+            test -f "$file"
+          done
+          test "$(git ls-files .github/agents | wc -l)" -eq 4
+          test "$(git ls-files .github/workflows | wc -l)" -eq 5
+          node <<'NODE'
+          const {existsSync, readFileSync} = require('node:fs');
+          const {dirname, resolve, sep} = require('node:path');
+          const {execFileSync} = require('node:child_process');
+          const markdown = execFileSync('git', ['ls-files', '-z', '*.md'], {encoding: 'utf8'}).split('\0').filter(Boolean);
+          for (const file of markdown) {
+            let fence = false;
+            for (const line of readFileSync(file, 'utf8').split('\n')) {
+              if (/^\s*(?:```|~~~)/.test(line)) fence = !fence;
+              if (fence) continue;
+              const refs = [...line.matchAll(/\]\(<?([^\s)>]+)>?/g)].map(match => match[1]);
+              const definition = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)/.exec(line);
+              if (definition) refs.push(definition[1]);
+              for (const ref of refs) {
+                if (/^(?:[A-Za-z][\w+.-]*:|#|\/\/)/.test(ref)) continue;
+                const local = decodeURIComponent(ref.split(/[?#]/)[0]);
+                const target = local.startsWith('/') ? resolve('.' + local) : resolve(dirname(file), local);
+                if ((target !== process.cwd() && !target.startsWith(process.cwd() + sep)) || !existsSync(target)) {
+                  throw new Error(`Link locale non risolto in ${file}`);
+                }
+              }
+            }
+          }
+          NODE
+      - name: Stato delle verifiche applicative
+        run: |
+          set -euo pipefail
+          pending=0
+          for area in backend frontend ai-service; do
+            if [[ "$(git ls-files "$area")" == "$area/.gitkeep" ]]; then
+              echo "$area: N/A — solo .gitkeep."
+            else
+              echo "::error::$area contiene file. Approvare lo stack e aggiungere i comandi reali a ci.yml."
+              pending=1
+            fi
+          done
+          exit "$pending"

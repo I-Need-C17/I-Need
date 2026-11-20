@@ -1,11 +1,11 @@
 name: Task agente
-description: Proponi un task circoscritto da pianificare e verificare.
+description: Proponi un task da pianificare e verificare.
 title: "[Task] "
-labels: ["task-agente"]
+labels: [task-agente]
 body:
   - type: markdown
     attributes:
-      value: Seleziona un TM in Assignees. Il PM applica la label area corrispondente.
+      value: Scegli un TM in Assignees. Il PM assegna una sola label di area.
   - type: dropdown
     id: tipo
     attributes:
@@ -13,57 +13,24 @@ body:
       options: [Applicativo, Documentazione, Governance]
     validations:
       required: true
-  - type: dropdown
-    id: area
-    attributes:
-      label: Area
-      options: [backend, frontend, ai-service]
-    validations:
-      required: true
-  - type: input
-    id: requisito
-    attributes:
-      label: UC o requisito
-      description: ID della fonte approvata oppure N/A - motivo per un task non applicativo.
-    validations:
-      required: true
   - type: textarea
     id: obiettivo
     attributes:
-      label: Obiettivo
+      label: Obiettivo e criteri
+      description: Indica risultato atteso, criteri di accettazione ed eventuali blocchi.
     validations:
       required: true
   - type: textarea
-    id: specifiche
+    id: file
     attributes:
-      label: Specifiche e revisione
-      description: Per i task applicativi usa le righe indicate nel README. Per gli altri indica i riferimenti o N/A - motivo.
+      label: File
+      description: "Una riga File: percorso per ogni candidato e Test: percorso per ogni nuovo file di test."
     validations:
       required: true
   - type: textarea
-    id: ambito
+    id: fonti
     attributes:
-      label: Ambito
-      description: "Descrivi i confini e aggiungi una riga File: percorso per ciascun candidato, Test: percorso per ciascun nuovo test applicativo."
-    validations:
-      required: true
-  - type: textarea
-    id: criteri
-    attributes:
-      label: Criteri di accettazione
-    validations:
-      required: true
-  - type: textarea
-    id: frame
-    attributes:
-      label: Category Partition e Test Frame
-      description: Usa le righe CP, TF e Frame del README o indica N/A - motivo per i task non applicativi.
-    validations:
-      required: true
-  - type: textarea
-    id: dipendenze
-    attributes:
-      label: Dipendenze
-      description: Indica gli eventuali blocchi o scrivi Nessuna.
+      label: Fonti e frame
+      description: Per un task applicativo usa il formato del README. Per gli altri indica i riferimenti o N/A - motivo.
     validations:
       required: true
