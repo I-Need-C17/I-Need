@@ -24,13 +24,13 @@ body:
     id: file
     attributes:
       label: File
-      description: "Una riga File: percorso per ogni candidato e Test: percorso per ogni nuovo file di test."
+      description: "Una riga File: percorso per ogni candidato. Per il Tester, una riga Test: percorso per ogni nuovo test."
     validations:
       required: true
   - type: textarea
     id: fonti
     attributes:
       label: Fonti e frame
-      description: Per un task applicativo usa il formato del README. Per gli altri indica i riferimenti o N/A - motivo.
+      description: "Indica Requisito: ID e Riferimento: percorso per le fonti pertinenti. Per il Tester aggiungi CP, TF e Frame come nel README."
     validations:
       required: true

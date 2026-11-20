@@ -71,12 +71,12 @@ jobs:
               const plan = JSON.parse(selected.body.split('\n', 1)[0].slice(marker.length, -4));
               check(plan.status === 'pronto' && plan.assigned === tm.id && plan.title === issue.title && plan.body === issue.body &&
                 labels.filter(name => name.startsWith('area:')).join() === `area:${plan.area}`, 'Issue o piano obsoleti.');
-              const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id &&
+              const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id && c.created_at >= selected.created_at &&
                 c.body?.trim().startsWith('APPROVO PIANO')).at(-1);
               check(approval && approval.created_at === approval.updated_at, 'Serve un nuovo commento di approvazione del TM assegnato.');
               const [header, list, ...lines] = approval.body.trim().split(/\r?\n/);
               const paths = lines.filter(line => line.startsWith('- ')).map(line => line.slice(2));
-              check(header === `APPROVO PIANO ${selected.id}` && list === 'File autorizzati:' &&
+              check((header === 'APPROVO PIANO' || header === `APPROVO PIANO ${selected.id}`) && list === 'File autorizzati:' &&
                 paths.length === lines.length && paths.length === plan.files.length && new Set(paths).size === paths.length &&
                 paths.every(name => plan.files.includes(name)), 'L’approvazione deve elencare esattamente i file del piano.');
               return {plan, selected, approval, tm, events, labels};

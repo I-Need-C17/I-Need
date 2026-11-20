@@ -25,11 +25,11 @@ approvate seguono l’[indice in docs](docs/README.md) e le
    revisione AI informativa. Un'altra persona approva la PR e il **PM**
    verifica gli esiti sul commit finale prima di eseguire il merge.
 
-Copia l’ID numerico dal link al piano (`#issuecomment-123456789`). Indica
-tutti e soli i suoi file, uno per riga.
+Pubblica l’approvazione dopo il piano vigente. Indica tutti e soli i suoi
+file, uno per riga.
 
 ```text
-APPROVO PIANO 123456789
+APPROVO PIANO
 File autorizzati:
 - docs/README.md
 ```
@@ -41,16 +41,19 @@ Test e Revisione.
 
 ### Compilare la Issue
 
-- In **File** indica i candidati con una riga `File: percorso` ciascuno. Per
-  un task applicativo aggiungi `Test: percorso` per ogni nuovo test. Scrivi
+- In **File** indica i candidati con una riga `File: percorso` ciascuno.
+  Per la fase Test aggiungi `Test: percorso` per ogni nuovo test. Scrivi
   percorsi relativi esatti, senza wildcard. I sorgenti agentici stanno in
   `src/` o `app/` dell’area. I nuovi test stanno in `test/`, `tests/` o
   `src/test/` dell’area.
-- Per un task applicativo, in **Fonti e frame** indica una riga per
-  `UC:`, `Sequence:`, `Class:` (Class Diagram ristrutturato),
-  `Firme:`, `CP:` e `TF:`, seguite dai percorsi dei file approvati.
-  Usa `Frame: ID` per ogni frame e `Modello: percorso` per fonti
-  aggiuntive. Le fonti devono essere versionate su `main`.
+- Per un task applicativo, in **Fonti e frame** usa `Requisito: ID` e
+  `Riferimento: percorso` per gli artefatti approvati pertinenti, già
+  versionati su `main`. Puoi usare `UC:`, `Sequence:`, `Class:`,
+  `Firme:` e `Modello:` per specificare il tipo della fonte.
+- Prepara i dati del Tester prima di avviare un task applicativo da portare
+  fino alla revisione. Il Tester richiede `CP: percorso`, `TF: percorso`,
+  `Frame: ID` e le righe `Test: percorso` dei nuovi file. Cita anche le
+  firme pubbliche se necessarie per derivare i test.
 - Per documentazione e governance usa `Riferimento: percorso` oppure
   `N/A - motivo`. L’ambito agentico comprende `README.md`,
   `docs/README.md` e guide Markdown in `docs/guide/`. Pipeline, modelli,
@@ -72,7 +75,8 @@ GitHub può sospendere i run di apertura o aggiornamento di una PR
 generati da `GITHUB_TOKEN`. I passaggi umani `fase:test` e Ready for
 review avviano i job sullo stato corrente. Test e Revisione usano
 `pull_request_target`, caricano la configurazione di `main` e leggono
-metadati, file e diff della PR via API. La CI usa `pull_request` con
+metadati, file e diff della PR via API. Il Tester scrive in un workspace
+separato per evitare il checkout della PR nel job privilegiato. La CI usa `pull_request` con
 permessi di lettura. Il check GitHub vale per il commit di merge di prova
 o per il relativo head secondo lo stato della PR. [Eventi di GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
 

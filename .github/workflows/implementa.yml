@@ -57,12 +57,12 @@ jobs:
               const plan = JSON.parse(selected.body.split('\n', 1)[0].slice(marker.length, -4));
               check(plan.status === 'pronto' && plan.assigned === tm.id && plan.title === issue.title && plan.body === issue.body &&
                 labels.filter(name => name.startsWith('area:')).join() === `area:${plan.area}`, 'Issue o piano obsoleti.');
-              const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id &&
+              const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id && c.created_at >= selected.created_at &&
                 c.body?.trim().startsWith('APPROVO PIANO')).at(-1);
               check(approval && approval.created_at === approval.updated_at, 'Serve un nuovo commento di approvazione del TM assegnato.');
               const [header, list, ...lines] = approval.body.trim().split(/\r?\n/);
               const paths = lines.filter(line => line.startsWith('- ')).map(line => line.slice(2));
-              check(header === `APPROVO PIANO ${selected.id}` && list === 'File autorizzati:' &&
+              check((header === 'APPROVO PIANO' || header === `APPROVO PIANO ${selected.id}`) && list === 'File autorizzati:' &&
                 paths.length === lines.length && paths.length === plan.files.length && new Set(paths).size === paths.length &&
                 paths.every(name => plan.files.includes(name)), 'L’approvazione deve elencare esattamente i file del piano.');
               return {plan, selected, approval, tm, events, labels};
@@ -116,23 +116,18 @@ jobs:
                 : /^(README\.md|docs\/README\.md|docs\/guide\/.+\.md)$/.test(name)),
               'Il piano autorizza un file protetto o fuori ambito.');
             check(!git('diff', '--name-only', plan.sha, context.sha, '--', ...watched), 'Le fonti o i file sono cambiati. Ripetere il piano.');
-            const original = Object.fromEntries(plan.files.map(name => [name, file(context.sha, name, true)]));
+            for (const name of plan.files) file(context.sha, name, true);
             const sourceTexts = Object.fromEntries(plan.sources.map(name => [name, file(context.sha, name)]));
-            const checkPaths = [...plan.files, ...plan.tests];
-            for (const name of checkPaths) {
+            const {dirname} = require('node:path');
+            for (const name of plan.files) {
               const parts = name.split('/');
               check(parts.slice(0, -1).every((_, i) => {
                 const entry = git('ls-tree', context.sha, '--', parts.slice(0, i + 1).join('/'));
                 return !entry || entry.startsWith('040000 tree ');
               }), 'Il percorso attraversa un file, un symlink o un submodule.');
+              fs.mkdirSync(dirname(name), {recursive: true});
             }
-            const {dirname} = require('node:path');
-            for (const [name, content] of Object.entries(original)) {
-              const target = `${tmp}/contesto/${name}`;
-              fs.mkdirSync(dirname(target), {recursive: true});
-              if (content !== null) fs.writeFileSync(target, content);
-            }
-            save('implementa.json', {branch, plan, planId: selected.id, approvalId: approval.id, original, phase: phase.id});
+            save('implementa.json', {branch, plan, planId: selected.id, approvalId: approval.id, phase: phase.id});
             const prompt = fs.readFileSync('AGENTS.md', 'utf8') +
               '\nCrea o modifica nel workspace solo i file autorizzati. Usa i tool di lettura e scrittura concessi. ' +
               'Chiudi con PRONTO sulla prima riga se hai completato il lavoro, oppure BLOCCATO e il motivo. ' +
@@ -157,9 +152,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$COPILOT_GITHUB_TOKEN" || { echo "::error::Secret Copilot assente."; exit 1; }
-          mkdir -p "$RUNNER_TEMP/contesto/.github/agents"
-          cp ".github/agents/implementatore.agent.md" "$RUNNER_TEMP/contesto/.github/agents/"
-          cd -P "$RUNNER_TEMP/contesto"
+          cd -P "$GITHUB_WORKSPACE"
           files="$(jq -er '.plan.files[]' "$RUNNER_TEMP/implementa.json")"
           write_rules=()
           while IFS= read -r file; do
@@ -175,7 +168,7 @@ jobs:
             --max-ai-credits 3 --model auto --silent --no-color --log-level none --stream off \
             --prompt "$(cat "$RUNNER_TEMP/prompt.txt")" 2>/dev/null | head -c 2001 > "$RUNNER_TEMP/esito.txt" \
             || { echo "::error::Copilot CLI interrotta. Verificare credenziale, quota e limite di durata."; exit 1; }
-      - name: Convalida le modifiche e crea il branch
+      - name: Convalida il diff e prepara il commit
         if: steps.controllo.outputs.esegui == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
@@ -186,44 +179,29 @@ jobs:
             const bot = user => user?.login === 'github-actions[bot]' && user.type === 'Bot';
             const check = (ok, message) => { if (!ok) throw new Error(message); };
             const load = name => JSON.parse(fs.readFileSync(`${tmp}/${name}`, 'utf8'));
-            const {branch, plan, planId, approvalId, original, phase} = load('implementa.json');
+            const {branch, plan, planId, approvalId, phase} = load('implementa.json');
             const number = context.issue.number;
             const outcome = fs.readFileSync(`${tmp}/esito.txt`, 'utf8');
             check(Buffer.byteLength(outcome) <= 2000 && outcome.trimStart().split(/\r?\n/, 1)[0] === 'PRONTO',
               'Implementatore bloccato. Consultare fonti e piano con il TM.');
-            const {join, relative} = require('node:path');
-            const workspace = `${tmp}/contesto`;
-            const profile = '.github/agents/implementatore.agent.md';
-            const scope = [...plan.files, profile];
-            const seen = new Set();
-            const modified = [];
+            const {execFileSync} = require('node:child_process');
+            const git = (...args) => execFileSync('git', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']});
+            const names = output => output.split('\0').filter(Boolean);
+            const modified = [...new Set([
+              ...names(git('diff', '--no-renames', '--name-only', '-z', 'HEAD')),
+              ...names(git('ls-files', '--others', '-z')),
+            ])];
+            check(modified.length && modified.every(name => plan.files.includes(name)),
+              'Nessuna modifica o file fuori dal piano approvato.');
             let bytes = 0;
-            check(fs.lstatSync(workspace).isDirectory(), 'Workspace non valido.');
-            for (const entry of fs.readdirSync(workspace, {recursive: true, withFileTypes: true})) {
-              const target = join(entry.parentPath, entry.name);
-              const name = relative(workspace, target);
-              if (entry.isDirectory()) {
-                check(scope.some(file => file.startsWith(name + '/')), 'Directory fuori ambito.');
-                continue;
-              }
-              const info = fs.lstatSync(target);
-              check(scope.includes(name) && info.isFile() && info.nlink === 1 && !(info.mode & 0o111) && info.size <= 100000,
-                'File estraneo, speciale, eseguibile o troppo grande.');
-              seen.add(name);
-              if (name === profile) {
-                check(fs.readFileSync(target).equals(fs.readFileSync(profile)), 'Profilo modificato.');
-                continue;
-              }
-              const content = fs.readFileSync(target, 'utf8');
-              if (content === original[name]) continue;
-              bytes += info.size;
-              check(bytes <= 100000 && content.trim() && !/[\0\uFFFD]|[\t ]+\r?$/m.test(content) &&
-                !/gh[pousr]_[\w]{20,}|github_pat_[\w]{20,}/i.test(content), 'Contenuto o dimensione della modifica non validi.');
-              modified.push({file: name, content});
+            for (const name of modified) {
+              const info = fs.lstatSync(name, {throwIfNoEntry: false});
+              check(info?.isFile() && info.nlink === 1 && !(info.mode & 0o111) && (bytes += info.size) <= 100000,
+                'Cancellazione, file speciale, eseguibile o troppo grande.');
+              const content = fs.readFileSync(name, 'utf8');
+              check(content.trim() && !/[\0\uFFFD]/.test(content) && !/gh[pousr]_[\w]{20,}|github_pat_[\w]{20,}/i.test(content),
+                'Contenuto della modifica non valido.');
             }
-            check(seen.has(profile) && plan.files.every(name => original[name] === null || seen.has(name)),
-              'Cancellazione o rinomina non autorizzata.');
-            check(modified.length, 'Nessuna modifica da registrare.');
             const {data: main} = await github.rest.git.getRef({...repo, ref: 'heads/main'});
             const {data: issue} = await github.rest.issues.get({...repo, issue_number: number});
             const {data: approval} = await github.rest.issues.getComment({...repo, comment_id: approvalId});
@@ -238,27 +216,31 @@ jobs:
               latest('fase:piano') === plan.cycle && latest('fase:implementazione') === phase &&
               approval.user.id === plan.assigned && approval.created_at === approval.updated_at &&
               bot(selected.user) && selected.created_at === selected.updated_at, 'Main, Issue, piano o approvazione sono cambiati.');
-            const {data: base} = await github.rest.git.getCommit({...repo, commit_sha: context.sha});
-            const {data: tree} = await github.rest.git.createTree({...repo, base_tree: base.tree.sha,
-              tree: modified.map(entry => ({path: entry.file, mode: '100644', type: 'blob', content: entry.content}))});
-            const {data: commit} = await github.rest.git.createCommit({...repo, parents: [context.sha], tree: tree.sha,
-              message: `Issue #${number}: implementa il piano`});
+            git('add', '--', ...modified);
+            const staged = names(git('diff', '--cached', '--no-renames', '--name-only', '-z'));
+            check(staged.length && staged.every(name => modified.includes(name)), 'Indice Git fuori ambito.');
+            git('diff', '--cached', '--check');
             const baseUrl = `https://github.com/${repo.owner}/${repo.repo}/issues/${number}`;
             const body = `<!-- i-need:pr ${planId} ${approvalId} -->\nCloses #${number}\n\n` +
               `[Piano](${baseUrl}#issuecomment-${planId}) · [Approvazione TM](${baseUrl}#issuecomment-${approvalId})\n\n` +
               `Fonti su \`${plan.sha}\`\n\n${plan.sources.map(name => '- ' + name).join('\n')}\n\nFile modificati\n` +
-              modified.map(entry => '- ' + entry.file).join('\n') + '\n\n' +
+              staged.map(name => '- ' + name).join('\n') + '\n\n' +
               fs.readFileSync('.github/pull_request_template.md', 'utf8');
-            await github.rest.git.createRef({...repo, ref: `refs/heads/${branch}`, sha: commit.sha});
             fs.writeFileSync(`${tmp}/branch`, branch);
             fs.writeFileSync(`${tmp}/pr.md`, body);
-      - name: Apri la Draft PR
+      - name: Crea il commit, pubblica il branch e apri la Draft PR
         if: steps.controllo.outputs.esegui == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           branch="$(cat "$RUNNER_TEMP/branch")"
+          issue="${branch#agent/issue-}"
+          git -c user.name='github-actions[bot]' \
+            -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "Issue #${issue%-implementazione}: implementa il piano"
+          gh auth setup-git
+          git push origin "HEAD:refs/heads/$branch"
           gh pr create --repo "$GITHUB_REPOSITORY" --base main --head "$branch" --draft \
             --title "Implementazione ${branch#agent/}" --body-file "$RUNNER_TEMP/pr.md" \
             || { echo "::error::Branch creato. Il PM verifichi se la Draft PR esiste prima di ripetere."; exit 1; }

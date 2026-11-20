@@ -73,7 +73,7 @@ jobs:
             const cycle = events.filter(event => event.event === 'labeled' && event.label?.name === 'fase:piano').at(-1);
             check(cycle?.actor?.id === actor.id, 'Il ciclo di piano è cambiato.');
             const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: number});
-            if (comments.some(comment => bot(comment.user) && comment.body?.startsWith(`<!-- i-need:piano ${cycle.id} `))) return;
+            if (comments.some(comment => bot(comment.user) && comment.created_at === comment.updated_at && comment.body?.startsWith(`<!-- i-need:piano ${cycle.id} `))) return;
             check(typeof issue.body === 'string' && issue.body.length <= 10000, 'Compilare il form Task agente.');
             const sections = Object.fromEntries(issue.body.split(/^### /m).slice(1).map(part => {
               const end = part.indexOf('\n');
@@ -101,50 +101,73 @@ jobs:
               ? sourceRoot.test(name) && !testName.test(name) && !protectedName.test(name) && !testRoot.test(name)
               : /^(README\.md|docs\/README\.md|docs\/guide\/.+\.md)$/.test(name)),
               'Un file candidato è fuori perimetro. Le modifiche di configurazione richiedono una PR umana.');
-            check(app ? tests.length && tests.every(name => testRoot.test(name) && !protectedName.test(name)) : !tests.length,
+            check(app ? tests.every(name => testRoot.test(name) && !protectedName.test(name)) : !tests.length,
               'I nuovi test applicativi devono stare nelle directory di test dell’area.');
 
             const sourceField = sections['Fonti e frame'];
+            const requirements = entries(sourceField, 'Requisito');
             const frames = entries(sourceField, 'Frame');
-            let sources = entries(sourceField, 'Riferimento');
-            if (app) {
-              const required = {UC: 'docs/rad/uc/', Sequence: 'docs/rad/modelli/', Class: 'docs/sdd/modelli/',
-                Firme: 'docs/contratti/', CP: 'docs/test/', TF: 'docs/test/'};
-              sources = Object.entries(required).map(([tag, prefix]) => {
-                const values = entries(sourceField, tag);
-                check(values.length === 1 && values[0].startsWith(prefix), `Manca una fonte approvata per ${tag}.`);
-                return values[0];
-              });
-              const models = entries(sourceField, 'Modello');
-              check(models.every(name => /^docs\/(rad\/modelli|sdd\/modelli|design-patterns)\//.test(name)), 'Modello fuori perimetro.');
-              sources.push(...models);
-              check(frames.length && frames.length <= 12 && new Set(frames).size === frames.length &&
-                frames.every(frame => /^[A-Za-z][A-Za-z0-9_-]{1,63}$/.test(frame)), 'Indicare gli ID distinti dei Test Frame.');
-            } else {
-              check(!frames.length && (sources.length || /^N\/A - \S/.test(sourceField)) &&
-                sources.every(name => name.startsWith('docs/') || name === 'README.md'), 'Indicare riferimenti o N/A con motivo.');
+            const sources = entries(sourceField, 'Riferimento');
+            const tags = {UC: 'docs/rad/uc/', Sequence: 'docs/rad/modelli/', Class: 'docs/sdd/modelli/',
+              Firme: 'docs/contratti/', CP: 'docs/test/', TF: 'docs/test/'};
+            for (const [tag, prefix] of Object.entries(tags)) {
+              const paths = entries(sourceField, tag);
+              check(paths.every(name => name.startsWith(prefix)) &&
+                (!['CP', 'TF'].includes(tag) || paths.length <= 1), `Riferimenti non validi per ${tag}.`);
+              sources.push(...paths);
             }
-            check(exactList(sources), 'Percorsi delle fonti non validi.');
-            const texts = Object.fromEntries(sources.map(name => [name, file(context.sha, name)]));
-            if (app) {
-              const tf = texts[entries(sourceField, 'TF')[0]];
-              check(frames.every(frame => new RegExp(`(?<![\\w-])${frame}(?![\\w-])`).test(tf)), 'Un ID non compare nella fonte Test Frame.');
+            sources.push(...entries(sourceField, 'Modello'));
+            check(exactList(sources) && sources.every(name => name.startsWith('docs/') || name === 'README.md'),
+              'Citare solo percorsi approvati nelle fonti del repository.');
+            check(app || !frames.length && (sources.length || /^N\/A - \S/.test(sourceField)), 'Indicare i riferimenti o N/A con motivo.');
+            check(frames.length <= 12 && new Set(frames).size === frames.length &&
+              frames.every(frame => /^[A-Za-z][A-Za-z0-9_-]{1,63}$/.test(frame)), 'Usare ID distinti per i frame.');
+            const cp = entries(sourceField, 'CP')[0];
+            const tf = entries(sourceField, 'TF')[0];
+            check(!cp || cp !== tf, 'Category Partition e Test Frame devono essere fonti distinte.');
+            const texts = Object.fromEntries(sources.map(name => [name, file(context.sha, name, true)]));
+            const absent = sources.filter(name => texts[name] === null);
+            const block = absent.length ? `Fonti citate assenti su main: ${absent.join(', ')}.` :
+              app && (!requirements.some(id => /^[A-Za-z0-9][A-Za-z0-9_.-]*$/.test(id)) || !sources.length)
+                ? 'Indicare gli ID dei requisiti e almeno una fonte approvata pertinente.' : '';
+            if (tf && texts[tf] !== null) {
+              check(frames.every(frame => new RegExp(`(?<![\\w-])${frame}(?![\\w-])`).test(texts[tf])),
+                'Un ID non compare nella fonte Test Frame.');
             }
-            save('piano.json', {cycle: cycle.id, sha: context.sha, assigned: assigned.id, body: issue.body,
-              title: issue.title, area, kind, candidates, tests, sources, frames});
-            prompt('pianificatore', {issue: issue.body, fonti: texts},
-              '{"stato":"pronto|bloccato","file":["percorso esatto"],"piano":"Passi, interfacce, frame e rischi, oppure motivo del blocco"}');
+            const plan = {cycle: cycle.id, sha: context.sha, assigned: assigned.id, body: issue.body,
+              title: issue.title, area, kind, candidates, tests, sources, frames, requirements, cp, tf};
+            const previous = !block && comments.findLast(comment => {
+              const marker = /^<!-- i-need:piano \d+ (.+) -->\n/.exec(comment.body || '');
+              if (!marker || !bot(comment.user) || comment.created_at !== comment.updated_at) return false;
+              const old = JSON.parse(marker[1]);
+              return old.status === 'pronto' && old.sha === plan.sha && old.assigned === plan.assigned &&
+                old.body === plan.body && old.title === plan.title && old.area === plan.area;
+            });
+            if (previous) {
+              const [marker, ...body] = previous.body.split('\n');
+              const old = JSON.parse(/^<!-- i-need:piano \d+ (.+) -->$/.exec(marker)[1]);
+              const data = JSON.stringify({...plan, files: old.files, status: 'pronto'}).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+              await github.rest.issues.createComment({...repo, issue_number: number,
+                body: [`<!-- i-need:piano ${cycle.id} ${data} -->`, ...body].join('\n')});
+              return;
+            }
+            save('piano.json', {...plan, block});
+            if (!block) {
+              prompt('pianificatore', {issue: issue.body, fonti: texts},
+                '{"stato":"pronto|bloccato","file":["percorso esatto"],"piano":"Passi, requisiti, riferimenti, frame e rischi, oppure motivo del blocco"}');
+              core.setOutput('genera', 'true');
+            }
             core.setOutput('esegui', 'true');
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
-        if: steps.controllo.outputs.esegui == 'true'
+        if: steps.controllo.outputs.genera == 'true'
         with:
           node-version: '24'
           package-manager-cache: false
       - name: Installa la CLI
-        if: steps.controllo.outputs.esegui == 'true'
+        if: steps.controllo.outputs.genera == 'true'
         run: npm install --prefix "$RUNNER_TEMP/copilot" --ignore-scripts --no-audit --no-fund @github/copilot@1.0.114
       - name: Esegui il profilo pianificatore
-        if: steps.controllo.outputs.esegui == 'true'
+        if: steps.controllo.outputs.genera == 'true'
         env:
           COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}
         run: |
@@ -183,7 +206,7 @@ jobs:
             }
             const printable = value => value.replace(/[&<>@!]/g, c => `&#${c.charCodeAt(0)};`);
             const plan = load('piano.json');
-            const result = response();
+            const result = plan.block ? {stato: 'bloccato', file: [], piano: plan.block} : response();
             check(['pronto', 'bloccato'].includes(result.stato) && Array.isArray(result.file) &&
               result.file.every(name => plan.candidates.includes(name)) && new Set(result.file).size === result.file.length &&
               (result.stato === 'pronto' ? result.file.length : !result.file.length) &&
