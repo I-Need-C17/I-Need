@@ -1,0 +1,44 @@
+name: Task per agente
+description: Implementazione di un caso d'uso (o di una sua parte) con gli agenti
+title: "UC_XX [componente]: "
+labels: ["task-agente"]
+body:
+  - type: input
+    id: uc
+    attributes:
+      label: Caso d'uso
+      placeholder: UC_GM_1 CercaHostIdonei
+    validations:
+      required: true
+  - type: dropdown
+    id: componente
+    attributes:
+      label: Componente
+      options:
+        - backend
+        - frontend
+        - ai-service
+    validations:
+      required: true
+  - type: textarea
+    id: specifica
+    attributes:
+      label: Specifica (file di docs/ da leggere)
+      placeholder: |
+        docs/rad/uc/UC_GM_1.md
+        docs/modelli/seq_cerca_host.puml
+    validations:
+      required: true
+  - type: textarea
+    id: ambito
+    attributes:
+      label: Ambito (classi, componenti o endpoint da toccare)
+    validations:
+      required: true
+  - type: textarea
+    id: verifica
+    attributes:
+      label: Test frame da coprire
+      placeholder: TF01-TF10 di docs/test/cp_cerca_host.md
+    validations:
+      required: true

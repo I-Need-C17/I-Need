@@ -1,0 +1,60 @@
+# BOZZA ricavata dal documento Stack_Flusso (par. 5.3 e 5.4). Da confermare dal team.
+openapi: 3.0.3
+info:
+  title: i-Need AI service
+  version: 0.1.0
+paths:
+  /api/v1/calculate-compatibility:
+    post:
+      summary: Calcola la compatibilità tra un Guest e gli Host idonei
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompatibilityRequest"
+      responses:
+        "200":
+          description: Graduatoria degli Host per punteggio decrescente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CompatibilityResponse"
+        "422":
+          description: Payload non valido
+components:
+  schemas:
+    CompatibilityRequest:
+      type: object
+      required: [guest_id, guest_structured, guest_text, eligible_hosts]
+      properties:
+        guest_id: {type: string, example: GUEST_102}
+        guest_structured:
+          type: object
+          additionalProperties: {type: number}
+          example: {smoke: 0, pets: 1, quiet_hours: 4}
+        guest_text: {type: string}
+        eligible_hosts:
+          type: array
+          items:
+            type: object
+            required: [host_id, host_structured, host_text]
+            properties:
+              host_id: {type: string, example: HOST_205}
+              host_structured:
+                type: object
+                additionalProperties: {type: number}
+              host_text: {type: string}
+    CompatibilityResponse:
+      type: object
+      required: [status, rankings]
+      properties:
+        status: {type: string, example: success}
+        rankings:
+          type: array
+          items:
+            type: object
+            required: [host_id, compatibility_score]
+            properties:
+              host_id: {type: string}
+              compatibility_score: {type: number, minimum: 0, maximum: 100, example: 93.4}
