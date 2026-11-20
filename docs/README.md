@@ -1,7 +1,6 @@
 # Fonti e tracciabilità
 
-Gli originali RAD e SDD sono aggiornati dal team in Drive, nella cartella
-`GPS_I-Need`. I TM versionano qui trasposizioni testuali verificate e modelli
+Gli originali RAD e SDD sono aggiornati dal team in OneDrive. I TM versionano qui trasposizioni testuali verificate e modelli
 approvati, citando versione dell'originale, ID e commit della snapshot Git.
 
 - [rad/uc](rad/uc/) contiene i casi d'uso con gli ID originali.
