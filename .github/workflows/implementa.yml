@@ -1,0 +1,14 @@
+name: Implementazione
+on:
+  issues:
+    types: [labeled]
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+jobs:
+  checkpoint:
+    if: ${{ github.event.label.name == 'fase:implementazione' }}
+    uses: ./.github/workflows/controllo-fase.yml
+    with:
+      fase: implementa

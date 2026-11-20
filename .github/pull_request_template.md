@@ -1,22 +1,20 @@
-## Caso d'uso, componente e issue
-UC_XX NomeCaso, componente: backend / frontend / ai-service, closes #NN
+## Caso d'uso e componente
 
-## Piano
-- Piano approvato da (team member):
+<!-- Per un task agente, sostituisci NN con il numero dell'Issue e lascia
+     Closes #NN su una riga a sé. Per PR di manutenzione rimuovi il segnaposto. -->
 
-## Artefatti usati
-- File di `docs/` letti:
-- Test frame coperti:
+Closes #NN
 
-## Agenti
-- implementazione: agente / persona
-- test: agente `tester` / persona
-- tentativi falliti prima del verde:
+## Piano e artefatti
 
-## Modifiche ai modelli
-- (nessuna / elenco: vanno proposte in una PR separata su `docs/`)
+- Commento del piano approvato:
+- Specifiche e modelli usati:
+- Test frame, esiti attesi ed esiti ottenuti:
+- Modifiche a test esistenti, se concordate:
+- Modelli da aggiornare, se concordati:
 
-## Dichiarazione
-- [ ] Ho letto e so spiegare tutto il codice
-- [ ] Il controllo CI è verde
-- [ ] Chi approva è una persona diversa dall'autore
+## Verifica prima di Ready for review
+
+- [ ] Ho verificato i test e gli esiti attesi
+- [ ] Ho letto e so spiegare le modifiche
+- [ ] La CI ha eseguito i controlli previsti per questo cambiamento

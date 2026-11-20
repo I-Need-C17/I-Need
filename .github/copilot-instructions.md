@@ -1,5 +1,5 @@
-Le regole del progetto sono in `AGENTS.md` (radice) e nel `AGENTS.md` di ogni cartella
-(backend, frontend, ai-service). Leggile prima di lavorare.
-In sintesi: usa solo la specifica in `docs/`, non inventare nomi o endpoint, non toccare
-`AGENTS.md`, `.github/` e `docs/`, non modificare i test esistenti per farli passare,
-nessun segreto nel codice (repository pubblico).
+Applica le regole in `AGENTS.md` e la procedura in `docs/flusso-agentico.md`.
+Usa soltanto i modelli e i test frame indicati nel task e segnala le lacune.
+I ruoli e i permessi di GitHub governano i passaggi di fase. Lascia la
+pubblicazione approvata, la review formale e il merge ai responsabili umani.
+Usa dati fittizi e tieni ogni credenziale fuori dagli artefatti.

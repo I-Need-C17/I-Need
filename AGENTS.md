@@ -1,43 +1,45 @@
-# i-Need
+# I-Need
 
-## Contesto
-Piattaforma web per la coabitazione solidale promossa da Fondazione Housing Sociale:
-mette in relazione Host (offrono uno spazio) e Guest (cercano sistemazione), con la
-supervisione degli Operator. Progetto del corso di Gestione dei Progetti Software (Unisa).
+I-Need è un progetto del corso di Gestione dei Progetti Software dell'Università
+di Salerno. Il repository è pubblico. Usa dati fittizi nei task, negli esempi e
+nei test. Tieni credenziali, chiavi e dati personali fuori da file, Issue e PR.
 
-## Architettura (monorepo)
-- `frontend/`: React + TypeScript + Bootstrap, parla solo con il backend (REST JSON).
-- `backend/`: Spring Boot 3, Spring Data JPA, PostgreSQL, Spring Security con JWT.
-- `ai-service/`: FastAPI + Python, calcola la compatibilità Guest/Host.
-- Il servizio AI non accede mai al database: il backend raccoglie i dati e li invia in JSON.
-- Gli scambi tra backend e servizio AI sono solo JSON.
-- Ogni componente ha il proprio `AGENTS.md` con stack, comandi e regole: leggi quello della
-  cartella in cui lavori.
+## Ambito corrente
 
-## Specifica
-Tutto in `docs/`: casi d'uso in docs/rad/uc/, modelli in docs/modelli/, architettura in
-docs/sdd/, category partition in docs/test/, contratti API in docs/contratti/.
-Il task indica quali file usare. Se manca un'informazione, chiedi: non inventarla.
+La priorità è la pipeline GitHub. I task per gli scheletri applicativi sono
+rinviati. Le note tecniche nei componenti e il contratto OpenAPI sono materiale
+da riesaminare quando il team riprenderà lo stack.
 
-## Convenzioni
-Branch: `ucNN-componente-nome`. Commit: "UCNN: descrizione".
-Un task riguarda un solo componente.
+## Lavoro su un task
 
-## Regole
-Sempre: lavora nel branch del task; cita nella PR i file di `docs/` usati;
-un test per ogni test frame indicato nel task.
-Chiedi prima: nuove dipendenze; modifiche ai contratti in docs/contratti/;
-classi, endpoint o componenti non presenti nei modelli.
-Mai: push su `main`; modificare test esistenti per farli passare; credenziali, chiavi
-o dati personali nel codice (il repository è pubblico); modificare `AGENTS.md`,
-`.github/` e `docs/`; fare il merge di una PR.
+- Leggi il caso d'uso, i modelli, la Category Partition e gli esiti attesi
+  indicati nell'Issue. Segnala informazioni mancanti o incoerenti.
+- Rimani nell'ambito del piano approvato. Lavora nel branch del task e cita
+  nella PR i file di `docs/` usati. Chiedi prima di aggiungere dipendenze,
+  cambiare contratti o estendere l'ambito.
+- Gli agenti di un task applicativo devono lasciare ai PM le modifiche a
+  `AGENTS.md`, `.github/` e `docs/`. Segnala nella PR le modifiche ai modelli
+  da concordare prima del merge.
+- Genera un test per ogni frame dagli esiti attesi. In caso di divergenza,
+  riporta frame, risultato atteso e risultato ottenuto. Mantieni i test
+  esistenti e chiedi una revisione esplicita se serve aggiornarli.
+- Lascia l'approvazione a un revisore umano diverso dall'autore della PR.
+  Il merge su `main` spetta ai PM.
 
-## Fasi del lavoro
-1. Piano (label `fase:piano`): scrivi il piano e non modificare il codice.
-2. Implementazione (`fase:implementazione`): lavora sul branch del task, apri una Draft PR.
-3. Test (`fase:test`): test scritti dalla category partition, senza guardare l'implementazione.
-4. Revisione (`fase:revisione`): confronto con i modelli. L'approvazione è delle persone.
+## Fasi
 
-## Quando un task è finito
-I comandi di build e test del componente passano; ogni test frame ha un test;
-nessun file è stato modificato fuori dal piano approvato; la PR usa il template.
+1. Il PM apre il task, assegna un TM e applica `fase:piano`. Il piano va
+   pubblicato in un commento della Issue che inizi con `## Piano`.
+2. Il TM assegnato approva quel commento come indicato nella
+   [procedura](docs/flusso-agentico.md), quindi applica `fase:implementazione`.
+   Il lavoro confluisce in una Draft PR verso `main`.
+3. Il TM assegna `fase:test` alla Draft PR. Il tester usa la Category Partition,
+   i risultati attesi e le firme pubbliche del codice.
+4. Il TM verifica i test e porta la PR a **Ready for review**. Il revisore
+   confronta il diff con i modelli e la CI esegue i controlli disponibili.
+5. Un'altra persona approva la PR. Il PM verifica la Definition of Done e fa
+   il merge.
+
+I workflow attuali validano i passaggi e scrivono il loro esito in Actions.
+Per le attività riservate agli agenti il PM o il TM pubblica manualmente
+l'artefatto concordato durante il collaudo.

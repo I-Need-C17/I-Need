@@ -38,7 +38,7 @@ body:
   - type: textarea
     id: verifica
     attributes:
-      label: Test frame da coprire
-      placeholder: TF01-TF10 di docs/test/cp_cerca_host.md
+      label: Category Partition, test frame ed esiti attesi
+      placeholder: docs/test/cp_cerca_host.md — TF01-TF10 e relativi esiti attesi
     validations:
       required: true

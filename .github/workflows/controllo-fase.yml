@@ -1,0 +1,49 @@
+name: Controllo fase agentica
+on:
+  workflow_call:
+    inputs:
+      fase:
+        required: true
+        type: string
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+jobs:
+  controllo:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      # Su pull_request_target github.sha è il commit di base, scelto da GitHub.
+      # Il job legge i dati della PR via API e non accede al codice del branch della PR.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          FASE: ${{ inputs.fase }}
+          PM_LOGINS: ${{ vars.AGENTIC_PM_LOGINS }}
+          TM_LOGINS: ${{ vars.AGENTIC_TM_LOGINS }}
+        with:
+          script: |
+            const { checkPhase } = require('./.github/scripts/check-phase.cjs');
+            const repo = context.repo;
+            const result = await checkPhase({
+              phase: process.env.FASE,
+              payload: context.payload,
+              pmLogins: process.env.PM_LOGINS,
+              tmLogins: process.env.TM_LOGINS,
+              getIssue: async (number) => {
+                const response = await github.rest.issues.get({ ...repo, issue_number: number });
+                return response.data;
+              },
+              listComments: (number) => github.paginate(github.rest.issues.listComments, {
+                ...repo, issue_number: number, per_page: 100,
+              }),
+            });
+            await core.summary
+              .addHeading('Checkpoint verificato')
+              .addRaw(result, true)
+              .addRaw('Durante il collaudo il responsabile gestisce la fase manualmente.', true)
+              .write();
