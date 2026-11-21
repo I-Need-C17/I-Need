@@ -1,0 +1,21 @@
+---
+config:
+  theme: base
+  state:
+    layout: elk
+  themeVariables:
+    primaryColor: '#ffffff'
+    primaryTextColor: '#000000'
+    primaryBorderColor: '#000000'
+    lineColor: '#000000'
+    labelBackgroundColor: transparent
+    edgeLabelBackground: transparent
+---
+stateDiagram
+  direction LR
+  [*] --> InAttesaRisposta: propostaRegistrata<br>⠀
+  InAttesaRisposta --> InAttesaRisposta: accettazioneRegistrata(c) [altraParteNonHaAccettato]
+  InAttesaRisposta --> Accettata: accettazioneRegistrata(c) [altraParteHaGiaAccettato]
+  InAttesaRisposta --> Rifiutata: rifiutaRegistrata(c)<br>⠀
+  Accettata --> [*]
+  Rifiutata --> [*]

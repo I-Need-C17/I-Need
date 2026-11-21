@@ -1,0 +1,33 @@
+@startuml
+left to right direction
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName "Courier"
+skinparam defaultFontStyle bold
+skinparam actorStyle default
+skinparam packageStyle folder
+skinparam rectangle {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam package {
+  BackgroundColor white
+  BorderColor black
+}
+
+
+' ---------------- Sistema e package (raggruppamenti RF) ----------------
+rectangle "I-Need" {
+  package GestioneUtente {
+  }
+  package GestioneAbitazione {
+  }
+  package GestioneRichiesteAbitative {
+  }
+  package GestioneMatchingEProposte {
+  }
+  package GestioneConvivenzaEFeedback {
+  }
+}
+
+@enduml

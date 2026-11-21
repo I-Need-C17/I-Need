@@ -1,0 +1,179 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    background: "#ffffff"
+    primaryColor: "#ffffff"
+    primaryBorderColor: "#000000"
+    primaryTextColor: "#000000"
+    lineColor: "#000000"
+    signalColor: "#000000"
+    signalTextColor: "#000000"
+    actorBkg: "#ffffff"
+    actorBorder: "#000000"
+    actorTextColor: "#000000"
+    actorLineColor: "#808080"
+    labelBoxBkgColor: "#ffffff"
+    labelBoxBorderColor: "#000000"
+    labelTextColor: "#000000"
+    loopTextColor: "#000000"
+    noteBkgColor: "#ffffff"
+    noteBorderColor: "#808080"
+    noteTextColor: "#000000"
+    activationBkgColor: "#d9d9d9"
+    activationBorderColor: "#000000"
+    sequenceNumberColor: "#ffffff"
+  sequence:
+    mirrorActors: false
+    boxMargin: 10
+    boxTextMargin: 8
+    messageMargin: 35
+    noteMargin: 15
+    diagramMarginX: 30
+    diagramMarginY: 60
+---
+sequenceDiagram
+    autonumber
+    actor OP as op: Operator
+    participant ERV as «boundary»<br/>:ElencoRichiesteAbitativeView
+
+    OP->>+ERV: selezionaRichiestaAbitativa()
+    create participant C as «control»<br/>:AvvioPropostaAbbinamentoControl
+    ERV-->>C: «create»
+    ERV->>-C: avviaRicercaHost(ra)
+    activate C
+    
+    participant RA as «entity»<br/>ra: RichiestaAbitativa
+    participant G as «entity»<br/>g: Guest
+    C->>+RA: getDatiRichiesta()
+    RA-->>-C: dataInizio, dataFine
+    
+    C->>+RA: getAreaGeografica()
+    participant AGR as «entity»<br/>areaRichiesta: AreaGeografica
+    RA-->>-C: areaRichiesta
+    
+    C->>+RA: getGuest()
+    RA-->>-C: g
+
+    Note over C: Ricerca e verifica idoneità complessiva degli Host
+    
+    C->>C: hosts = recuperaTuttiGliHost()
+    
+    participant H as «entity»<br/>h: Host
+    participant A as «entity»<br/>a: Alloggio
+    
+    loop per ogni Host recuperato
+        C->>+H: getAlloggio()
+        H-->>-C: a
+        
+        C->>+A: getAreaGeografica()
+        A-->>-C: areaAlloggio
+        
+        C->>+AGR: corrisponde(areaAlloggio)
+        AGR-->>-C: corrispondenzaGeografica
+        
+        C->>+A: coprePeriodo(dataInizio, dataFine)
+        A-->>-C: alloggioCoprePeriodo
+        
+        C->>+H: verificaAssenzaImpegni(dataInizio, dataFine)
+        H-->>-C: senzaImpegni
+        
+        opt [ corrispondenzaGeografica && alloggioCoprePeriodo && senzaImpegni ]
+            C->>C: aggiungiAIdonei(h)
+        end
+    end
+
+    rect rgb(248, 248, 248)
+    alt hostIdonei è vuoto
+        C->>ERV: segnalaNessunHostIdoneo()
+    else hostIdonei non è vuoto
+        create participant GRV as «boundary»<br/>:GraduatoriaHostView
+        C-->>GRV: «create»(hostIdonei)
+        
+        participant QP as «entity»<br/>qp: QuestionarioPreferenze
+
+        C->>+QP: getDomande()
+        QP-->>-C: elencoDomande (collezione di Domanda)
+
+        loop per ogni Host idoneo
+            C->>+H: getRisposte()
+            H-->>-C: risposteHost (collezione di Risposta)
+            C->>+G: getRisposte()
+            G-->>-C: risposteGuest (collezione di Risposta)
+            C->>C: punteggio = calcolaCompatibilita(elencoDomande, risposteHost, risposteGuest)
+            C->>C: assegnaPunteggio(h, punteggio)
+        end
+        
+        rect rgb(240, 240, 240)
+        alt elaborazione matching riuscita
+            C->>C: hostOrdinati = ordinaPerPunteggioDecrescente(hostIdonei)
+            C->>GRV: mostraGraduatoria(hostOrdinati)
+
+            loop la proposta non è inviata e l'Operator non annulla e non si verifica un errore
+                OP->>+GRV: selezionaHost(idHost)
+                C->>C: hostSelez = individuaHost(idHost)
+                create participant DHV as «boundary»<br/>:DettaglioHostView
+                GRV-->>DHV: «create»(hostSelez)
+                GRV->>-C: visualizzaDettaglio(hostSelez)
+                
+                C->>+H: getDettagliGenerali()
+                Note right of C: Interazioni riferite al singolo hostSelez
+                H-->>-C: profilo, preferenze
+                C->>+H: getAlloggio()
+                H-->>-C: alloggioSelez
+                
+                C->>DHV: mostraDettagli(hostSelez, alloggioSelez, profilo)
+                
+                rect rgb(225, 225, 225)
+                alt invia proposta
+                    OP->>+DHV: inviaProposta()
+                    DHV->>-C: submit(hostSelez, ra)
+                    
+                    Note over C: Ulteriore verifica della disponibilità delle parti prima dell'invio
+                    C->>C: disponibilitaConfermata = verificaDisponibilitaParti(hostSelez, g, dataInizio, dataFine)
+                    
+                    rect rgb(210, 210, 210)
+                    alt disponibilitaConfermata = true
+                        create participant P as «entity»<br/>p: PropostaAbbinamento
+                        C-->>P: «create»(hostSelez, ra, op)
+                        Note over P: Entity creata con stato = InAttesaRisposta
+                        C->>C: salvata = registraProposta(p)
+                        
+                        rect rgb(195, 195, 195)
+                        alt salvata
+                            C->>ERV: mostraConfermaInvio(p)
+                        else errore tecnico nel salvataggio
+                            destroy P
+                            C-xP: «destroy»
+                            C->>DHV: segnalaErroreTecnico()
+                        end
+                        end
+                    else disponibilitaConfermata = false
+                        C->>DHV: segnalaErroreTecnico()
+                    end
+                    end
+                else annulla
+                    OP->>+DHV: tornaAlleRichieste()
+                    DHV->>-C: annulla()
+                end
+                end
+                
+                destroy DHV
+                C-xDHV: «destroy»
+            end
+            
+        else errore tecnico nel matching (8.d)
+            C->>GRV: segnalaErroreTecnico()
+        end
+        end
+        
+        destroy GRV
+        C-xGRV: «destroy»
+    end
+    end
+
+    C->>ERV: aggiornaElencoRichieste()
+    
+    Note over OP, ERV: Termine del processo di ricerca e avvio proposta
+    deactivate C

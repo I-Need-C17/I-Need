@@ -1,0 +1,20 @@
+---
+config:
+  theme: base
+  state:
+    layout: elk
+  themeVariables:
+    primaryColor: '#ffffff'
+    primaryTextColor: '#000000'
+    primaryBorderColor: '#000000'
+    lineColor: '#000000'
+    labelBackgroundColor: transparent
+    edgeLabelBackground: transparent
+---
+stateDiagram
+  direction LR
+  [*] --> Attiva: registra(r)<br>[salvata]
+  Attiva --> Abbinata: segnaAbbinata()<br>[accettataDaEntrambi()]
+  Attiva --> Annullata: segnaAnnullata()<br>⠀
+  Abbinata --> [*]
+  Annullata --> [*]

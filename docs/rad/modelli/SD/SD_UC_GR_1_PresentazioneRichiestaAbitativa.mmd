@@ -1,0 +1,87 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    background: "#ffffff"
+    primaryColor: "#ffffff"
+    primaryBorderColor: "#000000"
+    primaryTextColor: "#000000"
+    lineColor: "#000000"
+    signalColor: "#000000"
+    signalTextColor: "#000000"
+    actorBkg: "#ffffff"
+    actorBorder: "#000000"
+    actorTextColor: "#000000"
+    actorLineColor: "#808080"
+    labelBoxBkgColor: "#ffffff"
+    labelBoxBorderColor: "#000000"
+    labelTextColor: "#000000"
+    loopTextColor: "#000000"
+    noteBkgColor: "#ffffff"
+    noteBorderColor: "#808080"
+    noteTextColor: "#000000"
+    activationBkgColor: "#d9d9d9"
+    activationBorderColor: "#000000"
+    sequenceNumberColor: "#ffffff"
+  sequence:
+    mirrorActors: false
+    boxMargin: 10
+    boxTextMargin: 8
+    messageMargin: 35
+    noteMargin: 15
+    diagramMarginX: 30
+    diagramMarginY: 60
+---
+sequenceDiagram
+    autonumber
+    actor G as g: Guest
+    participant V as «boundary»<br/>:RichiesteAbitativeView
+
+    G->>+V: click()
+    create participant C as «control»<br/>:PresentazioneRichiestaAbitativaControl
+    V-->>C: «create»
+    V->>-C: avviaPresentazione(g)
+    activate C
+    C->>C: aree = elencaAree()
+    create participant F as «boundary»<br/>:RichiestaAbitativaForm
+    C-->>F: «create»(aree)
+
+    loop la richiesta non è registrata e il Guest non annulla e non si verifica un errore tecnico
+        G->>F: compila(area, dataInizio, dataFine)
+        rect rgb(242, 242, 242)
+        alt conferma
+            G->>+F: conferma()
+            F->>-C: submit(area, dataInizio, dataFine)
+            C->>C: campiErrati = verificaDati(area, dataInizio, dataFine)
+            rect rgb(217, 217, 217)
+            alt campiErrati è vuoto
+                create participant R as «entity»<br/>r: RichiestaAbitativa
+                C-->>R: «create»(g, area, dataInizio, dataFine)
+                Note over R: Entity creata ma non ancora salvata
+                C->>C: salvata = registra(r)
+                rect rgb(191, 191, 191)
+                alt salvata
+                    Note over R: r registrata con stato = Attiva
+                    C->>V: mostraConferma(r)
+                else errore tecnico nel salvataggio (6.c)
+                    destroy R
+                    C-xR: «destroy»
+                    C->>F: segnalaErroreRegistrazione()
+                end
+                end
+            else campiErrati non è vuoto o ci sono dati mancanti (5.b)
+                C->>F: segnalaDatiNonValidi(campiErrati)
+            end
+            end
+        else annulla (3.a)
+            G->>+F: annulla()
+            F->>-C: annulla()
+        end
+        end
+    end
+
+    destroy F
+    C-xF: «destroy»
+    C->>V: mostraRichieste()
+    deactivate C

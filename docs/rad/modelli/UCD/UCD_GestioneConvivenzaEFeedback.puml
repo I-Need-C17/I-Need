@@ -1,0 +1,66 @@
+@startuml I-Need_UCD_GestioneMatchingEProposte
+
+' ============================================================
+'  I-Need - Use Case Diagram del package
+'  GestioneMatchingEProposte (RF_GM)
+'  Notazione Bruegge & Dutoit: monocromatico, attori stick-figure,
+'  use case come ellissi, associazioni come linee semplici,
+'  <<include>> (freccia tratteggiata) dallo use case che include
+'  verso lo use case incluso.
+'  Il Login non e' modellato come <<include>>: l'autenticazione
+'  e' parte della entry condition (vedi UC_GM_1 e UC_GM_2 nel RAD).
+'  Il package GestioneRichiesteAbitative e' riportato solo con lo
+'  use case da cui parte il matching.
+' ============================================================
+
+left to right direction
+skinparam monochrome true
+skinparam shadowing false
+skinparam ranksep 150
+skinparam nodesep 90
+skinparam defaultFontName "Courier"
+skinparam defaultFontStyle bold
+skinparam actorStyle default
+skinparam packageStyle folder
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam package {
+  BackgroundColor white
+  BorderColor black
+}
+
+' ---------------- Attori ----------------
+actor Convivente
+actor Operator
+
+package GestioneMatchingEProposte {
+  ' RF_GM_1, RF_GM_2
+  usecase "VisualizzazioneHostIdonei"     as UC_HostIdonei
+  ' RF_GM_3
+  usecase "AvvioPropostaAbbinamento"      as UC_Invio
+   usecase "AnnullamentoPropostaAbbinamento"      as UC_Ann
+  ' RF_GM_10
+  usecase "ConsultazioneStatoProposte" as UC_ElencoProp
+  ' RF_GM_4, RF_GM_5
+  usecase "ConsultazioneProposteRicevute" as UC_ConsProp
+  ' RF_GM_6, RF_GM_7, RF_GM_8, RF_GM_9 (UC_GM_2)
+  usecase "RispostaPropostaAbbinamento"   as UC_Risposta
+  ' RF_GM_11, RF_GM_12
+  usecase "ConsultazioneProfiloAbbinato"  as UC_ProfAbb
+
+}
+
+' ---------------- Associazioni attori ----------------
+Convivente -- UC_ConsProp
+Convivente -- UC_Risposta
+Convivente -- UC_ProfAbb
+
+UC_HostIdonei -- Operator
+UC_Invio      -- Operator
+UC_ElencoProp -- Operator
+UC_Ann -- Operator
+
+
+@enduml
