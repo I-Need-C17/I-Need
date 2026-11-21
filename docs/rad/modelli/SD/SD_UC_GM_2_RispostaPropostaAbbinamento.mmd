@@ -1,0 +1,148 @@
+---
+config:
+  theme: base
+  look: classic
+  themeVariables:
+    background: "#ffffff"
+    primaryColor: "#ffffff"
+    primaryBorderColor: "#000000"
+    primaryTextColor: "#000000"
+    lineColor: "#000000"
+    signalColor: "#000000"
+    signalTextColor: "#000000"
+    actorBkg: "#ffffff"
+    actorBorder: "#000000"
+    actorTextColor: "#000000"
+    actorLineColor: "#808080"
+    labelBoxBkgColor: "#ffffff"
+    labelBoxBorderColor: "#000000"
+    labelTextColor: "#000000"
+    loopTextColor: "#000000"
+    noteBkgColor: "#ffffff"
+    noteBorderColor: "#808080"
+    noteTextColor: "#000000"
+    activationBkgColor: "#d9d9d9"
+    activationBorderColor: "#000000"
+    sequenceNumberColor: "#ffffff"
+  sequence:
+    mirrorActors: false
+    boxMargin: 10
+    boxTextMargin: 8
+    messageMargin: 35
+    noteMargin: 15
+    diagramMarginX: 30
+    diagramMarginY: 60
+---
+sequenceDiagram
+    autonumber
+    actor C as c: Convivente
+    participant PAV as «boundary»<br/>:ProposteAbbinamentoView
+
+    C->>+PAV: click()
+    create participant RPC as «control»<br/>:RispostaPropostaAbbinamentoControl
+    PAV-->>RPC: «create»
+    PAV->>-RPC: avviaConsultazione(c)
+    activate RPC
+    participant PA as «entity»<br/>p: PropostaAbbinamento
+    participant RA as «entity»<br/>r: RichiestaAbitativa
+
+    RPC->>RPC: proposte = recuperaProposteRicevute(c)
+    RPC->>PAV: mostraProposte(proposte)
+
+    C->>+PAV: seleziona(idProposta)
+    PAV->>-RPC: visualizzaDettaglio(idProposta)
+    RPC->>RPC: p = individuaProposta(c, idProposta)
+    RPC->>RPC: dettaglio = componiDettaglio(p)
+    create participant DPV as «boundary»<br/>:DettaglioPropostaView
+    RPC-->>DPV: «create»(dettaglio)
+
+    loop finché non viene registrata una risposta, il Convivente non torna all'elenco e non si verifica un errore tecnico
+        rect rgb(242, 242, 242)
+        alt il Convivente accetta la proposta
+            C->>+DPV: click()
+            DPV->>-RPC: accetta(idProposta)
+            RPC->>RPC: ammesso = verificaPuoRispondere(p, c)
+            rect rgb(217, 217, 217)
+            alt ammesso = true
+                RPC->>RPC: beginTransazione()
+                RPC->>PA: accetta(c)
+                Note over PA: registra l'esito del Convivente
+                RPC->>+PA: completa = accettataDaEntrambi()
+                PA-->>-RPC: completa
+                rect rgb(191, 191, 191)
+                alt completa = true (seconda accettazione)
+                    RPC->>+PA: r = getRichiesta()
+                    PA-->>-RPC: r
+                    RPC->>RA: setStato(Abbinata)
+                    create participant CZ as «entity»<br/>cz: Convivenza
+                    RPC-->>CZ: «create»(p, stato = Attiva)
+                else completa = false (prima accettazione, 7.a)
+                    Note over RPC: la proposta resta in attesa dell'altra parte<br/>nessuna convivenza creata
+                end
+                end
+                RPC->>RPC: esito = commit()
+                rect rgb(191, 191, 191)
+                alt esito = ok
+                    rect rgb(166, 166, 166)
+                    alt completa = true
+                        RPC->>DPV: mostraConvivenzaAttivata(cz)
+                    else completa = false (7.a)
+                        RPC->>DPV: mostraPrimaAccettazione()
+                    end
+                    end
+                else errore tecnico (6.d)
+                    RPC->>RPC: rollback()
+                    RPC->>DPV: mostraErroreTecnico()
+                end
+                end
+            else ammesso = false (proposta già conclusa o risposta già registrata)
+                RPC->>DPV: mostraRispostaNonConsentita()
+            end
+            end
+        else il Convivente rifiuta la proposta (5.b)
+            C->>+DPV: click()
+            DPV->>-RPC: rifiuta(idProposta)
+            create participant CRD as «boundary»<br/>:ConfermaRifiutoDialog
+            RPC-->>CRD: «create»
+            rect rgb(217, 217, 217)
+            alt il Convivente conferma il rifiuto
+                C->>+CRD: click()
+                CRD->>-RPC: confermaRifiuto(idProposta)
+                RPC->>RPC: ammesso = verificaPuoRispondere(p, c)
+                rect rgb(191, 191, 191)
+                alt ammesso = true
+                    RPC->>RPC: beginTransazione()
+                    RPC->>PA: rifiuta(c)
+                    Note over PA: registra l'esito del Convivente<br/>proposta Rifiutata, nessuna convivenza
+                    RPC->>RPC: esito = commit()
+                    rect rgb(166, 166, 166)
+                    alt esito = ok
+                        RPC->>DPV: mostraRifiuto()
+                    else errore tecnico (6.d)
+                        RPC->>RPC: rollback()
+                        RPC->>DPV: mostraErroreTecnico()
+                    end
+                    end
+                else ammesso = false (proposta già conclusa o risposta già registrata)
+                    RPC->>DPV: mostraRispostaNonConsentita()
+                end
+                end
+            else il Convivente annulla il rifiuto
+                C->>+CRD: click()
+                CRD->>-RPC: annullaRifiuto()
+            end
+            end
+            destroy CRD
+            RPC-xCRD: «destroy»
+        else il Convivente torna all'elenco senza rispondere (5.c)
+            C->>+DPV: click()
+            DPV->>-RPC: tornaAllElenco()
+        end
+        end
+    end
+
+    destroy DPV
+    RPC-xDPV: «destroy»
+    RPC->>RPC: proposte = recuperaProposteRicevute(c)
+    RPC->>PAV: mostraProposte(proposte)
+    deactivate RPC

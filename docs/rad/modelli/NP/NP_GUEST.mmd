@@ -1,0 +1,12 @@
+%%{init: {"flowchart": {"curve": "stepBefore"}, "themeVariables": {"primaryColor": "#ffffff", "primaryBorderColor": "#000000", "lineColor": "#000000"}}}%%
+flowchart TD
+    HG("Home Guest")
+    RA("Richieste Abitative")
+    NRA("Nuova Richiesta Abitativa")
+    PA("Proposte di Abbinamento")
+    DP("Dettaglio Proposta")
+
+    HG --> RA
+    HG --> PA
+    RA --> NRA
+    PA --> DP

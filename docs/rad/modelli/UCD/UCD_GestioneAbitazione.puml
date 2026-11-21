@@ -1,0 +1,59 @@
+@startuml I-Need_UCD_GestioneAbitazione
+
+' ============================================================
+'  I-Need - Use Case Diagram del package GestioneAbitazione (RF_GA)
+'  Notazione Bruegge & Dutoit: monocromatico, attori stick-figure,
+'  use case come ellissi, associazioni come linee semplici,
+'  <<include>> (freccia tratteggiata) dallo use case che include
+'  verso lo use case incluso.
+'  Il Login non e' modellato come <<include>>: l'autenticazione
+'  e' parte della entry condition (vedi UC_GA_1 nel RAD).
+'  Nomi allineati a UC_GA_1 "Registrazione Alloggio"
+'  (nel RAD: alloggio = abitazione).
+' ============================================================
+
+left to right direction
+skinparam monochrome true
+skinparam shadowing false
+skinparam ranksep 120
+skinparam defaultFontName "Courier"
+skinparam defaultFontStyle bold
+skinparam actorStyle default
+skinparam packageStyle folder
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam package {
+  BackgroundColor white
+  BorderColor black
+}
+
+' ---------------- Attori ----------------
+actor Host
+actor Guest
+actor Operator
+
+package GestioneAbitazione {
+  ' RF_GA_1 (UC_GA_1)
+  usecase "RegistrazioneAlloggio"     as UC_RegAll
+  ' RF_GA_2
+  usecase "VisualizzazioneAlloggio"   as UC_VisAll
+  ' RF_GA_3
+  usecase "ModificaAlloggio"          as UC_ModAll
+  ' RF_GA_4 (Operator), RF_GA_5 (Guest, nuovo)
+  usecase "ConsultazioneAlloggioHost" as UC_ConsAll
+}
+
+' ---------------- Associazioni attori ----------------
+Host -- UC_RegAll
+Host -- UC_VisAll
+Host -- UC_ModAll
+
+' Guest: consulta l'alloggio dell'Host (es. di una proposta ricevuta)
+Guest -- UC_ConsAll
+
+UC_ConsAll -- Operator
+
+
+@enduml

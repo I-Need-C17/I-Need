@@ -1,0 +1,18 @@
+%%{init: {"flowchart": {"curve": "stepBefore"}, "themeVariables": {"primaryColor": "#ffffff", "primaryBorderColor": "#000000", "lineColor": "#000000"}}}%%
+flowchart TD
+    HO("Home Operator")
+    ER("Richieste Abitative")
+    DR("Dettaglio Richiesta Abitativa")
+    GH("Graduatoria Host Idonei")
+    DH("Dettaglio Host")
+    CV("Convivenze")
+    FC("Filtri Convivenze")
+    DC("Dettaglio Convivenza")
+
+    HO --> ER
+    HO --> CV
+    ER --> DR
+    DR --> GH
+    GH --> DH
+    CV --> FC
+    CV --> DC

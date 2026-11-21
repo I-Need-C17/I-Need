@@ -1,0 +1,20 @@
+---
+config:
+  theme: base
+  state:
+    layout: elk
+  themeVariables:
+    primaryColor: '#ffffff'
+    primaryTextColor: '#000000'
+    primaryBorderColor: '#000000'
+    lineColor: '#000000'
+    labelBackgroundColor: transparent
+    edgeLabelBackground: transparent
+---
+stateDiagram-v2
+    direction LR
+
+    [*] --> Attiva : avvia convivenza[proposta accettata da Host e Guest]
+    Attiva --> Conclusa : [data di fine prevista raggiunta]
+    Attiva --> Conclusa : chiusura anticipata registrata dall'Operator
+    Conclusa --> [*] : termina<br>⠀

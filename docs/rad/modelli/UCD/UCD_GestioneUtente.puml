@@ -1,0 +1,89 @@
+@startuml I-Need_UCD_GestioneUtente
+
+' ============================================================
+'  I-Need - Use Case Diagram del package GestioneUtente (RF_GU)
+'  Notazione Bruegge & Dutoit: monocromatico, attori stick-figure,
+'  use case come ellissi, associazioni come linee semplici,
+'  <<include>> (freccia tratteggiata) dallo use case che include
+'  verso lo use case incluso.
+'  Il Login non e' modellato come <<include>>: come negli altri UCD
+'  del RAD, l'autenticazione e' parte della entry condition.
+' ============================================================
+
+left to right direction
+skinparam monochrome true
+skinparam shadowing false
+skinparam ranksep 120
+skinparam defaultFontName "Courier"
+skinparam defaultFontStyle bold
+skinparam actorStyle default
+skinparam packageStyle folder
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam package {
+  BackgroundColor white
+  BorderColor black
+}
+
+' ---------------- Attori ----------------
+actor Convivente
+actor Operator
+actor Admin
+actor UtenteNonRegistrato
+actor UtenteRegistrato
+
+
+
+package GestioneUtente {
+  ' RF_GU_1, RF_GU_2
+  usecase "Registrazione"                         as UC_Reg
+  ' RF_GU_3
+  usecase "Login"                                 as UC_Login
+  ' RF_GU_4
+  usecase "Logout"                                as UC_Logout
+  ' RF_GU_5
+  usecase "VisualizzazioneProfilo"                as UC_Profilo
+  ' RF_GU_6
+  usecase "ModificaDatiPersonali"                 as UC_ModDati
+  ' RF_GU_7, RF_GU_8
+  usecase "CompilazioneQuestionarioPreferenze"    as UC_CompQ
+  ' RF_GU_9, RF_GU_10
+  usecase "VisualizzazioneQuestionarioPreferenze" as UC_VisQ
+  ' RF_GU_11, RF_GU_12
+  usecase "ModificaQuestionarioPreferenze"        as UC_ModQ
+  ' RF_GU_13..RF_GU_16
+  usecase "ConsultazioneProfiloConvivente"        as UC_ConsProf
+  ' RF_GU_17
+  usecase "CreazioneAccountOperator"              as UC_CreaOp
+  ' RF_GU_18
+  usecase "VisualizzazioneListaAccount"           as UC_Account
+  ' RF_GU_19
+  usecase "DisattivazioneAccount"                 as UC_Disattiva
+}
+
+UtenteNonRegistrato -- UC_Reg
+
+UtenteRegistrato -- UC_Login
+UtenteRegistrato -- UC_Logout
+UtenteRegistrato -- UC_Profilo
+UtenteRegistrato -- UC_ModDati
+
+' ---------------- Associazioni attori (lato sinistro) ----------------
+Convivente -- UC_CompQ
+Convivente -- UC_VisQ
+Convivente -- UC_ModQ
+
+
+' ---------------- Associazioni attori (lato destro) ----------------
+
+UC_ConsProf -- Operator
+
+
+UC_CreaOp  -- Admin
+UC_Account -- Admin
+UC_Disattiva -- Admin
+
+
+@enduml

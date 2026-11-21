@@ -1,0 +1,333 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Class Diagram - Revisione PM" id="C17-I-Need-ClassDiagram-v1">
+    <mxGraphModel dx="818" dy="665" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1480" math="0" shadow="0" adaptiveColors="auto">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="utente" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3edfd;strokeColor=#6184b3;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;i&gt;&lt;b&gt;UtenteRegistrato&lt;/b&gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="151" width="280" x="780" y="45" as="geometry" />
+        </mxCell>
+        <mxCell id="utente_a" parent="utente" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- idUtente: String&lt;br&gt;- nome: String&lt;br&gt;- cognome: String&lt;br&gt;- email: String&lt;br&gt;- dataNascita: Data" vertex="1">
+          <mxGeometry height="111" width="280" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="oper" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3edfd;strokeColor=#6184b3;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Operator&lt;/b&gt;" vertex="1">
+          <mxGeometry height="40" width="220" x="435" y="370" as="geometry" />
+        </mxCell>
+        <mxCell id="convivente" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3edfd;strokeColor=#6184b3;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;i&gt;&lt;b&gt;Convivente&lt;/b&gt;&lt;/i&gt;" vertex="1">
+          <mxGeometry height="40" width="250" x="965" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="host" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3edfd;strokeColor=#6184b3;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Host&lt;/b&gt;" vertex="1">
+          <mxGeometry height="40" width="220" x="795" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="guest" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3edfd;strokeColor=#6184b3;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Guest&lt;/b&gt;" vertex="1">
+          <mxGeometry height="40" width="220" x="1150" y="500" as="geometry" />
+        </mxCell>
+        <mxCell id="questionario" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#fff2d3;strokeColor=#bd974e;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;QuestionarioPreferenze&lt;/b&gt;" vertex="1">
+          <mxGeometry height="40" width="275" x="1860" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="domanda" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#fff2d3;strokeColor=#bd974e;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Domanda&lt;/b&gt;" vertex="1">
+          <mxGeometry height="88" width="275" x="1770" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="domanda_a" parent="domanda" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- idDomanda: String&lt;br&gt;- testo: String" vertex="1">
+          <mxGeometry height="48" width="275" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="risposta" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#fff2d3;strokeColor=#bd974e;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Risposta&lt;/b&gt;" vertex="1">
+          <mxGeometry height="67" width="275" x="1560" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="risposta_a" parent="risposta" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- valore: String" vertex="1">
+          <mxGeometry height="27" width="275" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="alloggio" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3f4e7;strokeColor=#709a7a;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Alloggio&lt;/b&gt;" vertex="1">
+          <mxGeometry height="204" width="310" x="130" y="1064" as="geometry" />
+        </mxCell>
+        <mxCell id="alloggio_a" parent="alloggio" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- codice: String&lt;br&gt;- indirizzo: String&lt;br&gt;- tipologia: String&lt;br&gt;- dataInizioDisponibilita: Data&lt;br&gt;- dataFineDisponibilita: Data&lt;br&gt;- stato: StatoAlloggio" vertex="1">
+          <mxGeometry height="132" width="310" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="alloggio_line" parent="alloggio" style="line;html=1;strokeColor=#709a7a;strokeWidth=1;" value="" vertex="1">
+          <mxGeometry height="8" width="310" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="alloggio_m" parent="alloggio" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=12;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="+ coprePeriodo(inizio: Data, fine: Data): Boolean" vertex="1">
+          <mxGeometry height="27" width="310" y="173" as="geometry" />
+        </mxCell>
+        <mxCell id="proposta" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3f4e7;strokeColor=#709a7a;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;PropostaAbbinamento&lt;/b&gt;" vertex="1">
+          <mxGeometry height="204" width="325" x="510" y="850" as="geometry" />
+        </mxCell>
+        <mxCell id="proposta_a" parent="proposta" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- codice: String&lt;br&gt;- stato: StatoProposta&lt;br&gt;- esitoHost: EsitoRisposta&lt;br&gt;- esitoGuest: EsitoRisposta" vertex="1">
+          <mxGeometry height="90" width="325" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="proposta_line" parent="proposta" style="line;html=1;strokeColor=#709a7a;strokeWidth=1;" value="" vertex="1">
+          <mxGeometry height="8" width="325" y="123" as="geometry" />
+        </mxCell>
+        <mxCell id="proposta_m" parent="proposta" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=12;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="+ accetta(c: Convivente)&lt;br&gt;+ rifiuta(c: Convivente)&lt;br&gt;+ accettataDaEntrambi(): Boolean" vertex="1">
+          <mxGeometry height="69" width="325" y="131" as="geometry" />
+        </mxCell>
+        <mxCell id="richiesta" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3f4e7;strokeColor=#709a7a;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;RichiestaAbitativa&lt;/b&gt;" vertex="1">
+          <mxGeometry height="146" width="335" x="1230" y="835" as="geometry" />
+        </mxCell>
+        <mxCell id="richiesta_a" parent="richiesta" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- codice: String&lt;br&gt;- dataInizioPermanenza: Data&lt;br&gt;- dataFinePermanenza: Data&lt;br&gt;- stato: StatoRichiesta" vertex="1">
+          <mxGeometry height="90" width="335" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="i-AkiJDEiMqbxvvaVlW6-1" parent="richiesta" style="line;html=1;strokeColor=#709a7a;strokeWidth=1;" value="" vertex="1">
+          <mxGeometry height="8" width="335" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="i-AkiJDEiMqbxvvaVlW6-3" parent="richiesta" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="+ segnaAbbinata()&lt;div&gt;+ segnaAnnullata()&lt;br&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="90" width="335" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="convivenza" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3f4e7;strokeColor=#709a7a;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;Convivenza&lt;/b&gt;" vertex="1">
+          <mxGeometry height="130" width="330" x="790" y="1235" as="geometry" />
+        </mxCell>
+        <mxCell id="convivenza_a" parent="convivenza" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- codice: String&lt;br&gt;- dataInizio: Data&lt;br&gt;- dataFinePrevista: Data&lt;br&gt;- stato: StatoConvivenza" vertex="1">
+          <mxGeometry height="90" width="330" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="area" parent="1" style="swimlane;startSize=33;horizontal=1;collapsible=0;html=1;rounded=0;fillColor=#e3f4e7;strokeColor=#709a7a;fontColor=#1c314a;fontSize=16;align=center;whiteSpace=wrap;" value="«entity» &amp;nbsp; &lt;b&gt;AreaGeografica&lt;/b&gt;" vertex="1">
+          <mxGeometry height="120" width="250" x="1390" y="1250" as="geometry" />
+        </mxCell>
+        <mxCell id="area_a" parent="area" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=13;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="- citta: String&lt;br&gt;- zona: String" vertex="1">
+          <mxGeometry height="48" width="250" y="33" as="geometry" />
+        </mxCell>
+        <mxCell id="area_line" parent="area" style="line;html=1;strokeColor=#709a7a;strokeWidth=1;" value="" vertex="1">
+          <mxGeometry height="8" width="250" y="81" as="geometry" />
+        </mxCell>
+        <mxCell id="area_m" parent="area" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;html=1;fontSize=12;spacingLeft=9;spacingTop=4;fontColor=#1c314a;" value="+ corrisponde(a: AreaGeografica): Boolean" vertex="1">
+          <mxGeometry height="27" width="250" y="89" as="geometry" />
+        </mxCell>
+        <mxCell id="inh1" edge="1" parent="1" source="oper" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;endSize=17;strokeWidth=1.6;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="utente" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="860" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="inh2" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;endSize=17;strokeWidth=1.6;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="1030" y="240" />
+              <mxPoint x="860" y="240" />
+            </Array>
+            <mxPoint x="1030" y="300" as="sourcePoint" />
+            <mxPoint x="860" y="196" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="inh3" edge="1" parent="1" source="host" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;endSize=17;strokeWidth=1.6;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="convivente" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="inh4" edge="1" parent="1" source="guest" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=block;endFill=0;endSize=17;strokeWidth=1.6;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="convivente" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="q1" edge="1" parent="1" source="questionario" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;startArrow=diamondThin;startFill=1;startSize=17;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="domanda" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;contiene&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="q1_s" connectable="0" parent="q1" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint x="13" y="16" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="q1_t" connectable="0" parent="q1" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="-7" y="4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="q2" edge="1" parent="1" source="convivente" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="risposta" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;fornisce&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.0355" as="geometry">
+            <Array as="points">
+              <mxPoint x="1650" y="320" />
+              <mxPoint x="1650" y="698.5" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="q2_s" connectable="0" parent="q2" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.9024" as="geometry">
+            <mxPoint x="23" y="30" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="q2_t" connectable="0" parent="q2" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="33" y="39" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="q3" edge="1" parent="1" source="domanda" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;entryX=0.938;entryY=-0.009;entryDx=0;entryDy=0;entryPerimeter=0;" target="risposta" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;riceve&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.1891" as="geometry" />
+        </mxCell>
+        <mxCell id="q3_s" connectable="0" parent="q3" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.8335" as="geometry">
+            <mxPoint x="13" y="13" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="q3_t" connectable="0" parent="q3" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="-9" y="16" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a1" edge="1" parent="1" source="host" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="alloggio" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;registra&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a1_s" connectable="0" parent="a1" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a1_t" connectable="0" parent="a1" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a2" edge="1" parent="1" source="guest" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="richiesta" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;presenta&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a2_s" connectable="0" parent="a2" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint x="10" y="11" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a2_t" connectable="0" parent="a2" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="-7" y="15" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a3" edge="1" parent="1" source="oper" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="proposta" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;formula&lt;/font&gt;">
+          <mxGeometry relative="1" x="0.1603" as="geometry">
+            <Array as="points">
+              <mxPoint x="545" y="680" />
+              <mxPoint x="545" y="680" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a3_s" connectable="0" parent="a3" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.85" as="geometry">
+            <mxPoint x="10" y="-2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a3_t" connectable="0" parent="a3" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint y="17" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a4" edge="1" parent="1" source="host" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="proposta" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;riceve&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.1372" as="geometry">
+            <Array as="points">
+              <mxPoint x="840" y="695" />
+              <mxPoint x="672.5" y="695" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a4_s" connectable="0" parent="a4" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint x="-20" y="9" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a4_t" connectable="0" parent="a4" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.8974" as="geometry">
+            <mxPoint x="38" y="10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a5" edge="1" parent="1" source="proposta" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="richiesta" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;riguarda&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a5_s" connectable="0" parent="a5" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a5_t" connectable="0" parent="a5" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a6" edge="1" parent="1" source="proposta" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;entryX=0.25;entryY=0;entryDx=0;entryDy=0;" target="convivenza" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;genera&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a6_s" connectable="0" parent="a6" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.878" as="geometry">
+            <mxPoint x="8" y="3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a6_t" connectable="0" parent="a6" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="-12" y="2" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a7" edge="1" parent="1" source="host" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="convivenza" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;ospita&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.302" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a7_s" connectable="0" parent="a7" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint x="15" y="6" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a7_t" connectable="0" parent="a7" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="45" y="28" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a8" edge="1" parent="1" source="guest" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;exitX=0;exitY=0.5;exitDx=0;exitDy=0;" target="convivenza" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;partecipa&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.2941" as="geometry">
+            <mxPoint as="offset" />
+            <Array as="points">
+              <mxPoint x="1100" y="520" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a8_s" connectable="0" parent="a8" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.6418" as="geometry">
+            <mxPoint x="10" y="-57" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a8_t" connectable="0" parent="a8" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.9085" as="geometry">
+            <mxPoint x="40" y="20" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a9" edge="1" parent="1" source="alloggio" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="convivenza" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;sede di&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a9_s" connectable="0" parent="a9" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint x="-12" y="-3" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a9_t" connectable="0" parent="a9" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint y="-10" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a10" edge="1" parent="1" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;entryX=0.407;entryY=1.151;entryDx=0;entryDy=0;entryPerimeter=0;" target="area_m" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;si trova in&lt;/font&gt;">
+          <mxGeometry relative="1" x="-0.0465" as="geometry">
+            <Array as="points">
+              <mxPoint x="285" y="1425" />
+              <mxPoint x="915" y="1425" />
+              <mxPoint x="915" y="1430" />
+              <mxPoint x="1491.8" y="1430" />
+            </Array>
+            <mxPoint x="285.00000000000045" y="1283" as="sourcePoint" />
+            <mxPoint x="1390" y="1325" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a10_s" connectable="0" parent="a10" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.9137" as="geometry">
+            <mxPoint x="15" y="-37" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a10_t" connectable="0" parent="a10" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.7395" as="geometry">
+            <mxPoint x="102" y="-30" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a11" edge="1" parent="1" source="richiesta" style="edgeStyle=orthogonalEdgeStyle;html=1;endArrow=none;strokeWidth=1.4;strokeColor=#596b82;fontSize=12;fontColor=#43546a;labelBackgroundColor=default;defaultLabelBackgroundColor=page;labelPlacement=auto;" target="area" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;richiede&lt;/font&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="a11_s" connectable="0" parent="a11" style="edgeLabel;resizable=0;html=1;align=left;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;0..*&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="-0.91" as="geometry">
+            <mxPoint x="13" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="a11_t" connectable="0" parent="a11" style="edgeLabel;resizable=0;html=1;align=right;verticalAlign=bottom;fontSize=12;fontColor=#405168;labelBackgroundColor=default;defaultLabelBackgroundColor=page;" value="&lt;font style=&quot;font-size: 20px;&quot;&gt;1&lt;/font&gt;" vertex="1">
+          <mxGeometry relative="1" x="0.91" as="geometry">
+            <mxPoint x="25" y="4" as="offset" />
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

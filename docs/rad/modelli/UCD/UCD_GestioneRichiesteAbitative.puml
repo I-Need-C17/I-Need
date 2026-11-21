@@ -1,0 +1,59 @@
+@startuml I-Need_UCD_GestioneRichiesteAbitative
+
+' ============================================================
+'  I-Need - Use Case Diagram del package
+'  GestioneRichiesteAbitative (RF_GR)
+'  Notazione Bruegge & Dutoit: monocromatico, attori stick-figure,
+'  use case come ellissi, associazioni come linee semplici,
+'  <<include>> (freccia tratteggiata) dallo use case che include
+'  verso lo use case incluso.
+'  Il Login non e' modellato come <<include>>: l'autenticazione
+'  e' parte della entry condition (vedi UC_GR_1 nel RAD).
+'  Nomi allineati a UC_GR_1 "Presentazione domanda di alloggio"
+'  (nel RAD: domanda di alloggio = richiesta abitativa).
+' ============================================================
+
+left to right direction
+skinparam monochrome true
+skinparam shadowing false
+skinparam ranksep 120
+skinparam defaultFontName "Courier"
+skinparam defaultFontStyle bold
+skinparam actorStyle default
+skinparam packageStyle folder
+skinparam usecase {
+  BackgroundColor white
+  BorderColor black
+}
+skinparam package {
+  BackgroundColor white
+  BorderColor black
+}
+
+' ---------------- Attori ----------------
+actor Guest
+actor Operator
+
+package GestioneRichiesteAbitative {
+  ' RF_GR_1 (UC_GR_1)
+  usecase "PresentazioneRichiestaAbitativa"    as UC_Present
+  ' RF_GR_2
+  usecase "ConsultazioneStoricoRichieste"   as UC_Storico
+  ' RF_GR_3
+  usecase "AnnullamentoRichiestaAbitativa"  as UC_Annulla
+  ' RF_GR_4
+  usecase "ConsultazioneRichiesteAbitative" as UC_ConsRich
+  usecase "ConsultazioneDettaglioRichiestaAbitativa" as UC_ConsDettRich
+
+}
+
+' ---------------- Associazioni attori ----------------
+Guest -- UC_Present
+Guest -- UC_Storico
+Guest -- UC_Annulla
+
+UC_ConsRich -- Operator
+UC_ConsDettRich -- Operator
+
+
+@enduml
