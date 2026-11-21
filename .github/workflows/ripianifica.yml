@@ -106,7 +106,7 @@ jobs:
               return;
             }
             check(requests.some(c => c.id === event.id && c.body === event.body), 'Feedback assente, modificato o non valido.');
-            check(new Set([...done, ...requests.map(c => c.id)]).size <= 3, 'Tre richieste per ciclo. Serve una decisione del PM.');
+            check(new Set([...done, ...requests.map(c => c.id)]).size <= 3, 'Tre richieste per ciclo. Fermare il ciclo e segnalare il blocco.');
             // Più commenti ravvicinati possono lasciare un solo job in coda.
             const feedback = requests.filter(c => c.id > (plan.feedback?.at(-1) ?? comment.id))
               .map(c => ({id: c.id, body: c.body}));
@@ -135,9 +135,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$COPILOT_GITHUB_TOKEN" || { echo "::error::Secret Copilot assente."; exit 1; }
-          mkdir -p "$RUNNER_TEMP/contesto/.github/agents"
-          cp ".github/agents/pianificatore.agent.md" "$RUNNER_TEMP/contesto/.github/agents/"
-          cd "$RUNNER_TEMP/contesto"
+          cd "$GITHUB_WORKSPACE"
           export COPILOT_HOME="$RUNNER_TEMP/copilot-home" COPILOT_CACHE_HOME="$RUNNER_TEMP/copilot-cache"
           export COPILOT_PLUGIN_DIR_ONLY=true COPILOT_DISABLE_LOGIN_SHELL_ENV=1
           copilot_stderr="$(mktemp "$RUNNER_TEMP/copilot-stderr.XXXXXX")"

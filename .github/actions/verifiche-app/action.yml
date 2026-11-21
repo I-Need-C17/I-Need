@@ -1,0 +1,60 @@
+name: Verifiche applicative
+description: Esegue le verifiche approvate per i componenti inizializzati
+inputs:
+  continua-dopo-errore:
+    description: Restituisce l'esito per il report prima di far fallire il job chiamante
+    default: 'false'
+outputs:
+  exit-code:
+    description: Esito delle verifiche applicative
+    value: ${{ steps.verifica.outputs.exit_code }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-java@v4
+      if: ${{ hashFiles('backend/pom.xml') != '' && hashFiles('backend/.java-version') != '' }}
+      with:
+        distribution: temurin
+        java-version-file: backend/.java-version
+    - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      if: ${{ hashFiles('frontend/package.json') != '' && hashFiles('frontend/.nvmrc') != '' }}
+      with:
+        node-version-file: frontend/.nvmrc
+        package-manager-cache: false
+    - id: verifica
+      shell: bash
+      env:
+        CONTINUA: ${{ inputs.continua-dopo-errore }}
+      run: |
+        set -uo pipefail
+        status=0
+        if [[ -f backend/pom.xml ]]; then
+          if [[ -s backend/.java-version ]]; then
+            (cd backend && mvn -B verify) || status=1
+          else
+            echo "::error::Bootstrap backend incompleto: manca backend/.java-version."
+            status=1
+          fi
+        else
+          echo "::notice::Backend: Maven N/A finché manca il manifest approvato."
+        fi
+        if [[ -f frontend/package.json ]]; then
+          if [[ -s frontend/.nvmrc && -s frontend/package-lock.json ]]; then
+            (cd frontend && npm ci && npm run build && npm run test:ci) || status=1
+          else
+            echo "::error::Bootstrap frontend incompleto: mancano versione Node o lockfile."
+            status=1
+          fi
+        else
+          echo "::notice::Frontend: npm N/A finché manca il manifest approvato."
+        fi
+        if [[ -f ai-service/pyproject.toml || -f ai-service/requirements.txt ]]; then
+          echo "::error::Il bootstrap Python deve configurare qui i comandi approvati per FastAPI."
+          status=1
+        else
+          echo "::notice::Servizio AI: verifiche N/A fino al bootstrap Python."
+        fi
+        echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+        if [[ "$CONTINUA" != 'true' ]]; then
+          exit "$status"
+        fi
