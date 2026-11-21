@@ -13,7 +13,8 @@ approvate seguono l’[indice in docs](docs/README.md) e le
    `fase:piano`. Il Pianificatore pubblica un piano riferito a quella Issue e
    a una snapshot di `main`.
 2. Il **TM assegnato** controlla il piano, pubblica l’approvazione come
-   nuovo commento e applica `fase:implementazione`. Actions verifica
+   nuovo commento, rimuove `fase:piano` e applica `fase:implementazione`.
+   Actions ritrova il piano nella cronologia della Issue e verifica
    identità, permessi e perimetro, applica le modifiche autorizzate e apre
    la Draft PR `agent/issue-<N>-implementazione`.
 3. Il **TM** applica `fase:test` alla Draft PR. Per un task applicativo, il
@@ -49,7 +50,10 @@ Test e Revisione.
 - Per un task applicativo, in **Fonti e frame** usa `Requisito: ID` e
   `Riferimento: percorso` per gli artefatti approvati pertinenti, già
   versionati su `main`. Puoi usare `UC:`, `Sequence:`, `Class:`,
-  `Firme:` e `Modello:` per specificare il tipo della fonte.
+  `Firme:` e `Modello:` per specificare il tipo della fonte. Cita solo
+  i file pertinenti in formato testuale UTF-8, come `.md`, `.mmd`,
+  `.puml` e `.drawio`. Il prompt complessivo ha un limite di 120.000 byte
+  per il passaggio alla CLI.
 - Prepara i dati del Tester prima di avviare un task applicativo da portare
   fino alla revisione. Il Tester richiede `CP: percorso`, `TF: percorso`,
   `Frame: ID` e le righe `Test: percorso` dei nuovi file. Cita anche le
@@ -61,9 +65,11 @@ Test e Revisione.
 
 ### Diagnosticare e ripetere una fase
 
-Apri **Actions** e leggi il primo passo fallito. Correggi la Issue o le
-fonti con il PM e riapplica `fase:piano` per ottenere un nuovo piano.
-Un nuovo ciclo richiede un nuovo commento di approvazione. Se esiste un
+Se il piano è insoddisfacente, il TM chiede al PM di chiarire la Issue o
+le fonti. Il PM riapplica `fase:piano` (rimuovendola prima, se presente).
+Ogni nuovo ciclo richiede una nuova approvazione. Se una fase fallisce,
+apri **Actions**, leggi il primo passo fallito e risolvi la causa prima di
+ripetere il passaggio manuale. Se esiste un
 branch senza Draft PR, il PM verifica l’esito dell’apertura prima di
 intervenire sul branch.
 
@@ -87,9 +93,10 @@ o per il relativo head secondo lo stato della PR. [Eventi di GitHub Actions](htt
    Garantisci un revisore diverso dal TM responsabile. In **Settings →
    Actions → General** consenti le Action usate e **Allow GitHub Actions
    to create and approve pull requests**, necessario per aprire la Draft PR.
-2. Fai revisionare la PR di configurazione e attendi `ci-ok`. In
-   **Settings → Rules → Rulesets → New branch ruleset** rendi attivo un
-   ruleset sul default branch `main`, con PR obbligatoria, almeno
+2. Fai revisionare la PR di configurazione e attendi `ci-ok`. Il ruleset
+   di `main` è temporaneamente disattivato durante la configurazione.
+   Riattivalo in **Settings → Rules → Rulesets** prima del lavoro ordinario
+   del team, con PR obbligatoria, almeno
    un’approvazione umana, Code Owner review, revoca delle approvazioni stale,
    `ci-ok` da GitHub Actions, blocco cancellazioni e force push, senza bypass.
    Aggiungi `ci-ok` appena selezionabile. Solo un merge umano autorizzato
@@ -111,7 +118,8 @@ Il ruleset principale deve continuare a imporre CI e review anche ai PM.
 
 ### Bootstrap applicativo
 
-`ci-ok` riporta N/A per ogni area con solo `.gitkeep`. Quando il team
+`ci-ok` controlla workflow, diff, struttura e link Markdown e riporta
+N/A per ogni area con solo `.gitkeep`. Quando il team
 approva uno stack, la PR di bootstrap introduce manifest, dipendenze e
 i relativi comandi nel job `ci-ok`, sostituendo il ramo N/A per quell’area.
 I comandi dei test devono selezionare i frame pertinenti e fallire se
