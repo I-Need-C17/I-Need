@@ -170,6 +170,7 @@ jobs:
               exit 1
             }
       - name: Convalida il diff e prepara il commit
+        id: convalida
         if: steps.controllo.outputs.esegui == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
@@ -183,8 +184,6 @@ jobs:
             const {branch, plan, planId, approvalId, phase} = load('implementa.json');
             const number = context.issue.number;
             const outcome = fs.readFileSync(`${tmp}/esito.txt`, 'utf8');
-            check(outcome.trim() && Buffer.byteLength(outcome) <= 16000 && !/gh[pousr]_[\w]{20,}|github_pat_[\w]{20,}/i.test(outcome),
-              'Report di implementazione vuoto, eccessivo o contenente una possibile credenziale.');
             const {execFileSync} = require('node:child_process');
             const git = (...args) => execFileSync('git', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']});
             const names = output => output.split('\0').filter(Boolean);
@@ -192,8 +191,11 @@ jobs:
               ...names(git('diff', '--no-renames', '--name-only', '-z', 'HEAD')),
               ...names(git('ls-files', '--others', '-z')),
             ])];
-            check(modified.length && modified.every(name => plan.files.includes(name)),
-              'Nessuna modifica o file fuori dal piano approvato.');
+            check(modified.length, 'Copilot CLI ha terminato senza produrre modifiche rilevabili da Git.');
+            check(modified.every(name => plan.files.includes(name)),
+              'Copilot ha modificato uno o più file fuori dal piano approvato.');
+            check(outcome.trim() && Buffer.byteLength(outcome) <= 16000 && !/gh[pousr]_[\w]{20,}|github_pat_[\w]{20,}/i.test(outcome),
+              'Report di implementazione vuoto, eccessivo o contenente una possibile credenziale.');
             let bytes = 0;
             for (const name of modified) {
               const info = fs.lstatSync(name, {throwIfNoEntry: false});
@@ -238,6 +240,35 @@ jobs:
               fs.readFileSync('.github/pull_request_template.md', 'utf8');
             fs.writeFileSync(`${tmp}/branch`, branch);
             fs.writeFileSync(`${tmp}/pr.md`, body);
+      - name: Diagnostica della convalida fallita
+        if: failure() && steps.convalida.conclusion == 'failure'
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const fs = require('node:fs');
+            const {execFileSync} = require('node:child_process');
+            const tmp = process.env.RUNNER_TEMP;
+            const {plan} = JSON.parse(fs.readFileSync(`${tmp}/implementa.json`, 'utf8'));
+            const status = execFileSync('git', ['status', '--short', '-z', '--untracked-files=all', '--no-renames'],
+              {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']}).split('\0').filter(Boolean);
+            core.info(`git status --short | ${status.length} voci`);
+            for (const entry of status.slice(0, 20)) {
+              const filename = entry.slice(3);
+              const label = plan.files.includes(filename) ? JSON.stringify(filename) : '[percorso fuori perimetro]';
+              core.info(`git status --short | ${entry.slice(0, 2)} ${label}`);
+            }
+            if (status.length > 20) core.info('git status --short | elenco limitato alle prime 20 voci');
+
+            // Il repository è pubblico. Registra solo indicatori fissi ricavati dal report.
+            const outcome = fs.readFileSync(`${tmp}/esito.txt`, 'utf8');
+            const signals = [
+              [/permission|access denied|denied|not allowed|forbidden|non autorizzat|permess|negat|vietat/i, 'possibile limite di autorizzazione'],
+              [/tool.{0,40}(?:unavailable|not available|failed|error)|strument.{0,40}(?:non disponibil|fallit|errore)/i, 'possibile errore di uno strumento'],
+              [/bloccato|blocked|non posso|non ho potuto|impossibile|unable|cannot/i, 'possibile blocco dichiarato'],
+              [/nessuna modifica|senza modifiche|no changes|did not (?:modify|edit|write)/i, 'possibile assenza di modifiche dichiarata'],
+              [/ho (?:modificato|creato|aggiornato|scritto)|(?:created|modified|updated|wrote)\b/i, 'possibile modifica dichiarata'],
+            ].filter(([pattern]) => pattern.test(outcome)).map(([, label]) => label);
+            core.info(`Report Copilot | ${Buffer.byteLength(outcome)} byte | ${signals.join(', ') || 'nessun indicatore riconosciuto'}`);
       - name: Compila e verifica prima della Draft PR
         if: steps.controllo.outputs.esegui == 'true'
         uses: ./.github/actions/verifiche-app
