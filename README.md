@@ -109,8 +109,9 @@ o per il relativo head secondo lo stato della PR. [Eventi di GitHub Actions](htt
    del team, con PR obbligatoria, almeno
    un’approvazione umana, Code Owner review, revoca delle approvazioni stale,
    `ci-ok` da GitHub Actions, blocco cancellazioni e force push, senza bypass.
-   Aggiungi `ci-ok` appena selezionabile. Solo un merge umano autorizzato
-   attiva i quattro workflow su `main`. [Ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
+   Aggiungi `ci-ok` appena selezionabile. Il merge umano rende disponibili
+   su `main` i sette workflow GitHub Actions (sei agentici e uno CI) per
+   i quattro agenti. Ciascun workflow parte al proprio evento. [Ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
 3. Dopo il via libera del PM, usa un account Student e crea una credenziale
    fine-grained con **Copilot Requests**. In **Settings → Environments**
    crea `copilot-student`, limita **Deployment branches and tags** al

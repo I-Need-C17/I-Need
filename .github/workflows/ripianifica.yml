@@ -115,10 +115,9 @@ jobs:
               'Fonti o file del task cambiati su main. Il PM deve avviare un nuovo ciclo.');
             check(!plan.block, 'Il PM deve risolvere il blocco sulle fonti della Issue prima di ripianificare.');
             const fonts = Object.fromEntries(plan.sources.map(name => [name, file(plan.sha, name)]));
-            const scope = plan.files.length ? plan.files : plan.scope ?? null;
-            save('ripianifica.json', {plan, previousId: comment.id, feedback, scope});
+            save('ripianifica.json', {plan, previousId: comment.id, feedback});
             prompt('pianificatore', {issue: plan.body, pianoPrecedente: comment.body.split('\n').slice(1).join('\n'),
-              feedback, fonti: fonts, fileAutorizzabili: scope ?? plan.candidates},
+              feedback, fonti: fonts, fileAutorizzabili: plan.candidates},
               '{"stato":"pronto|bloccato","file":["percorso esatto"],"piano":"Piano aggiornato o blocco da sottoporre al PM. Mantieni requisiti, modelli, contratti e scope."}');
             core.setOutput('esegui', 'true');
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -169,14 +168,14 @@ jobs:
             }
             const printable = value => value.replace(/[&<>@!]/g, c => `&#${c.charCodeAt(0)};`);
             const bot = user => user?.login === 'github-actions[bot]' && user.type === 'Bot';
-            const {plan, previousId, feedback, scope} = load('ripianifica.json');
+            const {plan, previousId, feedback} = load('ripianifica.json');
             const result = response();
             check(['pronto', 'bloccato'].includes(result.stato) && Array.isArray(result.file) &&
               typeof result.piano === 'string' && result.piano.trim() && result.piano.length <= 10000,
               'Risposta del Pianificatore non valida.');
             if (result.stato === 'pronto') {
               check(result.file.length && new Set(result.file).size === result.file.length &&
-                result.file.every(name => (scope ?? plan.candidates).includes(name)),
+                result.file.every(name => (plan.candidates).includes(name)),
                 'Il nuovo piano richiede un cambio di perimetro. Serve una decisione del PM.');
             }
             const number = context.issue.number;
@@ -201,7 +200,8 @@ jobs:
             const version = (plan.version ?? 1) + 1;
             const files = result.stato === 'pronto' ? result.file : [];
             const revised = {...plan, version, previous: previousId, feedback: feedback.map(c => c.id),
-              scope: files.length ? files : scope, files, status: result.stato};
+              files, status: result.stato};
+            delete revised.scope;
             const data = JSON.stringify(revised).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
             const link = id => `[${id}](#issuecomment-${id})`;
             await github.rest.issues.createComment({...repo, issue_number: number,

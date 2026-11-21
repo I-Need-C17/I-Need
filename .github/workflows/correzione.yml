@@ -146,26 +146,27 @@ jobs:
             check(!tree.truncated && diff.every(f => tree.tree.some(entry => entry.path === f.filename &&
               entry.mode === '100644' && entry.sha === f.sha)), 'Il diff contiene file speciali o riferiti a un altro SHA.');
 
-            const reports = comments.flatMap(c => {
-              const report = /^<!-- i-need:correzione ([a-f0-9]{40}) ([0-9]+(?:,[0-9]+){0,2}) -->\n/.exec(c.body || '');
-              return report && bot(c.user) && c.created_at === c.updated_at
-                ? [{sha: report[1], requests: report[2].split(',').map(Number)}] : [];
-            });
             const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: prNumber});
-            check(reports.every(report => commits.some(item => item.sha === report.sha)), 'Una correzione pubblicata non è più nella PR. Consultare il PM.');
-            if (reports.some(report => report.requests.includes(event.id))) {
-              core.notice('Correzione e report già pubblicati per questa richiesta.');
-              return;
-            }
+            const reportedShas = comments.flatMap(c => {
+              const match = /^<!-- i-need:correzione ([a-f0-9]{40}) [0-9]+(?:,[0-9]+){0,2} -->\n/.exec(c.body || '');
+              return match && bot(c.user) && c.created_at === c.updated_at ? [match[1]] : [];
+            });
+            check(reportedShas.every(sha => commits.some(item => item.sha === sha)),
+              'Una correzione pubblicata non è più nella PR. Consultare il PM.');
             const corrections = commits.flatMap(item => {
               const message = new RegExp(`^I-Need: correzione PR ${prNumber}, piano ${selected.id}\\n\\nRichieste: ([0-9]+(?:,[0-9]+){0,2})$`)
                 .exec(item.commit.message.trimEnd());
               return message && bot(item.author) && item.commit.verification?.verified
                 ? [{sha: item.sha, requests: message[1].split(',').map(Number)}] : [];
             });
-            const done = new Set([...corrections, ...reports].flatMap(item => item.requests));
+            const done = new Set(corrections.flatMap(item => item.requests));
             const recorded = corrections.find(item => item.requests.includes(event.id));
             if (recorded) {
+              const marker = `<!-- i-need:correzione ${recorded.sha} ${recorded.requests.join(',')} -->`;
+              if (comments.some(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(marker))) {
+                core.notice('Correzione e report già pubblicati per questa richiesta.');
+                return;
+              }
               // Il commit firmato permette di recuperare un report interrotto dopo la scrittura.
               const {data: published} = await github.rest.repos.getCommit({...repo, ref: recorded.sha});
               check(published.files?.length && published.files.every(f => plan.files.includes(f.filename)),
@@ -178,12 +179,24 @@ jobs:
             // Un solo job può rimanere in coda per la PR. Considera anche richieste precedenti inevase.
             const feedback = requests.filter(c => !done.has(c.id)).map(c => ({id: c.id, body: c.body}));
 
+            async function recoverTestCommit(prNumber, number, planId, testFiles) {
+              const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: prNumber});
+              const message = `Issue #${number}: aggiungi test indipendenti\n\nI-Need-Piano: ${planId}`;
+              const signed = commits.findLast(item => bot(item.author) && item.commit.verification?.verified &&
+                item.commit.message.trimEnd() === message);
+              if (!signed) return null;
+              const {data: commit} = await github.rest.repos.getCommit({...repo, ref: signed.sha});
+              return commit.files?.length === testFiles.length && testFiles.every(file =>
+                commit.files.some(entry => entry.filename === file.filename && entry.status === 'added' && entry.sha === file.sha))
+                ? signed.sha : null;
+            }
             const testFiles = diff.filter(f => plan.tests.includes(f.filename));
             if (testFiles.length) {
               const report = comments.findLast(c => bot(c.user) && c.created_at === c.updated_at &&
                 /^<!-- i-need:test [a-f0-9]{40} -->/.test(c.body || ''));
-              check(report, 'I test presenti devono avere un report del Tester.');
-              const sha = /^<!-- i-need:test ([a-f0-9]{40}) -->/.exec(report.body)[1];
+              const sha = report ? /^<!-- i-need:test ([a-f0-9]{40}) -->/.exec(report.body)[1]
+                : await recoverTestCommit(prNumber, number, selected.id, testFiles);
+              check(sha, 'I test presenti devono avere un’evidenza verificabile del Tester.');
               const prior = (await github.rest.git.getCommit({...repo, commit_sha: sha})).data;
               const tested = (await github.rest.git.getTree({...repo, tree_sha: prior.tree.sha, recursive: 'true'})).data;
               check(!tested.truncated && testFiles.length === plan.tests.length && testFiles.every(f =>

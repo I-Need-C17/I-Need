@@ -140,6 +140,23 @@ jobs:
               entry.path === file.filename && entry.mode === '100644' && entry.sha === file.sha)),
               'Il diff contiene un file speciale, eseguibile o riferito a un altro SHA.');
             const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: prNumber});
+            async function checkCorrections(pr, tmId, planId, comments) {
+              const prefix = 'RICHIESTA CORREZIONE TM:';
+              const requests = comments.filter(c => c.user.id === tmId && c.user.type === 'User' &&
+                c.created_at === c.updated_at && c.created_at >= pr.created_at &&
+                c.body?.startsWith(prefix) && c.body.slice(prefix.length).trim() && c.body.length <= 6000);
+              if (!requests.length) return;
+              const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: pr.number});
+              const marker = new RegExp(`^I-Need: correzione PR ${pr.number}, piano ${planId}\\n\\nRichieste: ([0-9]+(?:,[0-9]+){0,2})$`);
+              const done = new Set(commits.flatMap(item => {
+                const match = marker.exec(item.commit.message.trimEnd());
+                return match && item.author?.login === 'github-actions[bot]' && item.author.type === 'Bot' &&
+                  item.commit.verification?.verified ? match[1].split(',').map(Number) : [];
+              }));
+              check(requests.every(request => done.has(request.id)),
+                'Correzione TM pendente. Attendere il commit verificato, poi ripetere fase:test e Ready for review.');
+            }
+            await checkCorrections(pr, tm.id, selected.id, comments);
             const head = pr.head.sha;
             const testMarker = sha => `<!-- i-need:test ${sha} -->`;
             const report = comments.find(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(testMarker(head)));
@@ -149,7 +166,7 @@ jobs:
               r.body?.startsWith('## Revisione AI informativa'))) return;
             check(files.every(file => file.patch), 'Il diff contiene file binari o patch non disponibili.');
             const sourceTexts = Object.fromEntries(plan.sources.map(name => [name, file(plan.sha, name)]));
-            save('revisione.json', {prNumber, head});
+            save('revisione.json', {prNumber, head, number, tmId: tm.id, planId: selected.id});
             prompt('revisore', {sha: head, piano: selected.body.split('\n').slice(1).join('\n'), fonti: sourceTexts,
               test: report.body, diff: files.map(({filename, patch}) => ({filename, patch}))},
               '{"sha":"SHA esaminato","review":"Sintesi, rilievi per file/riga, severità e prove"}');
@@ -201,10 +218,31 @@ jobs:
               return parsed;
             }
             const printable = value => value.replace(/[&<>@!]/g, c => `&#${c.charCodeAt(0)};`);
-            const {prNumber, head} = load('revisione.json');
+            const {prNumber, head, number, tmId, planId} = load('revisione.json');
             const result = response();
             check(result.sha === head && typeof result.review === 'string' && result.review.trim() &&
               result.review.length <= 15000, 'Review vuota o riferita a uno SHA diverso.');
+            async function checkCorrections(pr, tmId, planId, comments) {
+              const prefix = 'RICHIESTA CORREZIONE TM:';
+              const requests = comments.filter(c => c.user.id === tmId && c.user.type === 'User' &&
+                c.created_at === c.updated_at && c.created_at >= pr.created_at &&
+                c.body?.startsWith(prefix) && c.body.slice(prefix.length).trim() && c.body.length <= 6000);
+              if (!requests.length) return;
+              const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: pr.number});
+              const marker = new RegExp(`^I-Need: correzione PR ${pr.number}, piano ${planId}\\n\\nRichieste: ([0-9]+(?:,[0-9]+){0,2})$`);
+              const done = new Set(commits.flatMap(item => {
+                const match = marker.exec(item.commit.message.trimEnd());
+                return match && item.author?.login === 'github-actions[bot]' && item.author.type === 'Bot' &&
+                  item.commit.verification?.verified ? match[1].split(',').map(Number) : [];
+              }));
+              check(requests.every(request => done.has(request.id)),
+                'Correzione TM pendente. Attendere il commit verificato, poi ripetere fase:test e Ready for review.');
+            }
+            const {data: issue} = await github.rest.issues.get({...repo, issue_number: number});
+            check(issue.assignees.length === 1 && issue.assignees[0].id === tmId, 'Il TM assegnato è cambiato durante la revisione.');
+            const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: prNumber});
+            const {data: current} = await github.rest.pulls.get({...repo, pull_number: prNumber});
+            await checkCorrections(current, tmId, planId, comments);
             const {data: pr} = await github.rest.pulls.get({...repo, pull_number: prNumber});
             check(pr.state === 'open' && !pr.draft && pr.head.sha === head && pr.base.ref === 'main' &&
               pr.body === context.payload.pull_request.body, 'PR o SHA cambiati durante la revisione.');
