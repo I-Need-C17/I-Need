@@ -201,7 +201,10 @@ jobs:
               *) echo "::error::File fuori dal ruolo Tester: $file"; exit 1 ;;
             esac
             grep -Fxq -- "$file" "$RUNNER_TEMP/test-files.txt" || { echo "::error::Test fuori perimetro: $file"; exit 1; }
-            test -f "$file" && test ! -L "$file" && test ! -x "$file" || { echo "::error::Serve un test regolare"; exit 1; }
+            if [[ ! -f "$file" || -L "$file" || -x "$file" ]]; then
+              echo "::error::Serve un test regolare"
+              exit 1
+            fi
             git add -- "$file"
             count=$((count+1))
           done < <(git ls-files --others --exclude-standard -z)
