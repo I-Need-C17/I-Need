@@ -38,40 +38,7 @@ jobs:
             const bot = user => user?.login === 'github-actions[bot]' && user.type === 'Bot';
             const check = (ok, message) => { if (!ok) throw new Error(message); };
             const save = (name, value) => fs.writeFileSync(`${tmp}/${name}`, JSON.stringify(value));
-            async function approved(number) {
-              const {data: issue} = await github.rest.issues.get({...repo, issue_number: number});
-              const labels = issue.labels.map(label => label.name);
-              const tm = issue.assignees[0];
-              check(issue.state === 'open' && !issue.pull_request && issue.assignees.length === 1 && tm.type === 'User' &&
-                labels.includes('task-agente'), 'Issue aperta, label task-agente e TM assegnato sono obbligatori.');
-              const {data: access} = await github.rest.repos.getCollaboratorPermissionLevel({...repo, username: tm.login});
-              check(['write', 'admin', 'maintain'].includes(access.permission), 'Il TM assegnato deve avere almeno Write.');
-
-              const events = await github.paginate(github.rest.issues.listEvents, {...repo, issue_number: number});
-              const cycle = events.filter(event => event.event === 'labeled' && event.label?.name === 'fase:piano').at(-1);
-              const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: number});
-              const marker = `<!-- i-need:piano ${cycle?.id} `;
-              const plans = comments.filter(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(marker));
-              const selected = plans.at(-1);
-              check(cycle && selected, 'Serve il piano del ciclo corrente.');
-              const plan = JSON.parse(selected.body.split('\n', 1)[0].slice(marker.length, -4));
-              check(plan.status === 'pronto' && plan.assigned === tm.id && plan.title === issue.title && plan.body === issue.body &&
-                labels.filter(name => name.startsWith('area:')).join() === `area:${plan.area}`, 'Issue o piano obsoleti.');
-              const handled = plan.feedback?.at(-1) ?? selected.id;
-              check(!comments.some(c => c.id > handled && c.user.id === tm.id && c.user.type === 'User' &&
-                c.created_at === c.updated_at && c.body?.startsWith('RICHIESTA REVISIONE PIANO:') &&
-                c.body.slice('RICHIESTA REVISIONE PIANO:'.length).trim() && c.body.length <= 6000),
-                'Ripianificazione pendente. Attendere il nuovo piano e approvarlo.');
-              const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id && c.created_at >= selected.created_at &&
-                c.body?.trim().startsWith('APPROVO PIANO')).at(-1);
-              check(approval && approval.created_at === approval.updated_at, 'Serve un nuovo commento di approvazione del TM assegnato.');
-              const [header, list, ...lines] = approval.body.trim().split(/\r?\n/);
-              const paths = lines.filter(line => line.startsWith('- ')).map(line => line.slice(2));
-              check((header === 'APPROVO PIANO' || header === `APPROVO PIANO ${selected.id}`) && list === 'File autorizzati:' &&
-                paths.length === lines.length && paths.length === plan.files.length && new Set(paths).size === paths.length &&
-                paths.every(name => plan.files.includes(name)), 'L’approvazione deve elencare esattamente i file del piano.');
-              return {plan, selected, approval, tm, events, labels};
-            }
+            const {approvedPlan} = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/piano.cjs`);
             const {execFileSync} = require('node:child_process');
             const git = (...args) => execFileSync('git', args, {encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe']});
             // Il prompt viene passato come singolo argomento alla CLI su Linux.
@@ -113,7 +80,7 @@ jobs:
               pr.base.repo.full_name === process.env.GITHUB_REPOSITORY && pr.head.repo?.full_name === process.env.GITHUB_REPOSITORY &&
               bot(pr.user) && /^[a-f0-9]{40}$/.test(pr.head.sha), 'Serve una Draft PR interna del workflow di implementazione.');
             const number = Number(match[1]);
-            const {plan, selected, approval, tm, labels} = await approved(number);
+            const {plan, selected, approval, tm, labels} = await approvedPlan(github, repo, number);
             const marker = `<!-- i-need:pr ${selected.id} ${approval.id} -->\n`;
             check(pr.body?.startsWith(marker) && !labels.includes('fase:piano'), 'La PR non corrisponde al piano approvato.');
             const actor = context.payload.sender;
@@ -292,43 +259,9 @@ jobs:
             const fs = require('node:fs');
             const repo = context.repo;
             const tmp = process.env.RUNNER_TEMP;
-            const bot = user => user?.login === 'github-actions[bot]' && user.type === 'Bot';
             const check = (ok, message) => { if (!ok) throw new Error(message); };
             const load = name => JSON.parse(fs.readFileSync(`${tmp}/${name}`, 'utf8'));
-            async function approved(number) {
-              const {data: issue} = await github.rest.issues.get({...repo, issue_number: number});
-              const labels = issue.labels.map(label => label.name);
-              const tm = issue.assignees[0];
-              check(issue.state === 'open' && !issue.pull_request && issue.assignees.length === 1 && tm.type === 'User' &&
-                labels.includes('task-agente'), 'Issue aperta, label task-agente e TM assegnato sono obbligatori.');
-              const {data: access} = await github.rest.repos.getCollaboratorPermissionLevel({...repo, username: tm.login});
-              check(['write', 'admin', 'maintain'].includes(access.permission), 'Il TM assegnato deve avere almeno Write.');
-
-              const events = await github.paginate(github.rest.issues.listEvents, {...repo, issue_number: number});
-              const cycle = events.filter(event => event.event === 'labeled' && event.label?.name === 'fase:piano').at(-1);
-              const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: number});
-              const marker = `<!-- i-need:piano ${cycle?.id} `;
-              const plans = comments.filter(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(marker));
-              const selected = plans.at(-1);
-              check(cycle && selected, 'Serve il piano del ciclo corrente.');
-              const plan = JSON.parse(selected.body.split('\n', 1)[0].slice(marker.length, -4));
-              check(plan.status === 'pronto' && plan.assigned === tm.id && plan.title === issue.title && plan.body === issue.body &&
-                labels.filter(name => name.startsWith('area:')).join() === `area:${plan.area}`, 'Issue o piano obsoleti.');
-              const handled = plan.feedback?.at(-1) ?? selected.id;
-              check(!comments.some(c => c.id > handled && c.user.id === tm.id && c.user.type === 'User' &&
-                c.created_at === c.updated_at && c.body?.startsWith('RICHIESTA REVISIONE PIANO:') &&
-                c.body.slice('RICHIESTA REVISIONE PIANO:'.length).trim() && c.body.length <= 6000),
-                'Ripianificazione pendente. Attendere il nuovo piano e approvarlo.');
-              const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id && c.created_at >= selected.created_at &&
-                c.body?.trim().startsWith('APPROVO PIANO')).at(-1);
-              check(approval && approval.created_at === approval.updated_at, 'Serve un nuovo commento di approvazione del TM assegnato.');
-              const [header, list, ...lines] = approval.body.trim().split(/\r?\n/);
-              const paths = lines.filter(line => line.startsWith('- ')).map(line => line.slice(2));
-              check((header === 'APPROVO PIANO' || header === `APPROVO PIANO ${selected.id}`) && list === 'File autorizzati:' &&
-                paths.length === lines.length && paths.length === plan.files.length && new Set(paths).size === paths.length &&
-                paths.every(name => plan.files.includes(name)), 'L’approvazione deve elencare esattamente i file del piano.');
-              return {plan, selected, approval, tm, events, labels};
-            }
+            const {approvedPlan} = require(`${process.env.GITHUB_WORKSPACE}/.github/scripts/piano.cjs`);
             async function reportCorrection(prNumber, sha, requestIds, files) {
               const links = requestIds.map(id => `[${id}](#issuecomment-${id})`).join(', ');
               await github.rest.issues.createComment({...repo, issue_number: prNumber,
@@ -375,7 +308,7 @@ jobs:
             check(seen.has(profile) && plan.files.every(name => original[name] === null || seen.has(name)),
               'Cancellazione o rinomina non autorizzata.');
             check(files.length, 'Nessuna correzione da registrare.');
-            const {plan: currentPlan, selected, approval, labels} = await approved(number);
+            const {plan: currentPlan, selected, approval, labels} = await approvedPlan(github, repo, number);
             check(selected.id === planId && approval.id === approvalId && currentPlan.sha === plan.sha && !labels.includes('fase:piano'),
               'Piano o approvazione cambiati durante la correzione.');
             const {data: main} = await github.rest.git.getRef({...repo, ref: 'heads/main'});
