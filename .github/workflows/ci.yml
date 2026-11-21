@@ -39,7 +39,7 @@ jobs:
             test -f "$file"
           done
           test "$(git ls-files .github/agents | wc -l)" -eq 4
-          test "$(git ls-files .github/workflows | wc -l)" -eq 5
+          test "$(git ls-files .github/workflows | wc -l)" -eq 7
           node <<'NODE'
           const {existsSync, readFileSync} = require('node:fs');
           const {dirname, resolve, sep} = require('node:path');

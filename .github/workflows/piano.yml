@@ -159,11 +159,11 @@ jobs:
                 old.body === plan.body && old.title === plan.title && old.area === plan.area;
             });
             if (previous) {
-              const [marker, ...body] = previous.body.split('\n');
+              const [marker, , ...body] = previous.body.split('\n');
               const old = JSON.parse(/^<!-- i-need:piano \d+ (.+) -->$/.exec(marker)[1]);
               const data = JSON.stringify({...plan, files: old.files, status: 'pronto'}).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
               await github.rest.issues.createComment({...repo, issue_number: number,
-                body: [`<!-- i-need:piano ${cycle.id} ${data} -->`, ...body].join('\n')});
+                body: [`<!-- i-need:piano ${cycle.id} ${data} -->`, '## Piano · pronto', ...body].join('\n')});
               return;
             }
             save('piano.json', {...plan, block});

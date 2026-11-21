@@ -67,11 +67,16 @@ jobs:
               const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: number});
               const marker = `<!-- i-need:piano ${cycle?.id} `;
               const plans = comments.filter(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(marker));
-              check(plans.length === 1, 'Serve il piano del ciclo corrente.');
-              const selected = plans[0];
+              const selected = plans.at(-1);
+              check(cycle && selected, 'Serve il piano del ciclo corrente.');
               const plan = JSON.parse(selected.body.split('\n', 1)[0].slice(marker.length, -4));
               check(plan.status === 'pronto' && plan.assigned === tm.id && plan.title === issue.title && plan.body === issue.body &&
                 labels.filter(name => name.startsWith('area:')).join() === `area:${plan.area}`, 'Issue o piano obsoleti.');
+              const handled = plan.feedback?.at(-1) ?? selected.id;
+              check(!comments.some(c => c.id > handled && c.user.id === tm.id && c.user.type === 'User' &&
+                c.created_at === c.updated_at && c.body?.startsWith('RICHIESTA REVISIONE PIANO:') &&
+                c.body.slice('RICHIESTA REVISIONE PIANO:'.length).trim() && c.body.length <= 6000),
+                'Ripianificazione pendente. Attendere il nuovo piano e approvarlo.');
               const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id && c.created_at >= selected.created_at &&
                 c.body?.trim().startsWith('APPROVO PIANO')).at(-1);
               check(approval && approval.created_at === approval.updated_at, 'Serve un nuovo commento di approvazione del TM assegnato.');
@@ -128,7 +133,35 @@ jobs:
               entry.path === file.filename && entry.mode === '100644' && entry.sha === file.sha)),
               'Il diff contiene un file speciale, eseguibile o riferito a un altro SHA.');
             const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: prNumber});
+            async function checkCorrections(pr, tmId, planId, comments) {
+              const prefix = 'RICHIESTA CORREZIONE TM:';
+              const requests = comments.filter(c => c.user.id === tmId && c.user.type === 'User' &&
+                c.created_at === c.updated_at && c.created_at >= pr.created_at &&
+                c.body?.startsWith(prefix) && c.body.slice(prefix.length).trim() && c.body.length <= 6000);
+              if (!requests.length) return;
+              const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: pr.number});
+              const marker = new RegExp(`^I-Need: correzione PR ${pr.number}, piano ${planId}\\n\\nRichieste: ([0-9]+(?:,[0-9]+){0,2})$`);
+              const done = new Set(commits.flatMap(item => {
+                const match = marker.exec(item.commit.message.trimEnd());
+                return match && item.author?.login === 'github-actions[bot]' && item.author.type === 'Bot' &&
+                  item.commit.verification?.verified ? match[1].split(',').map(Number) : [];
+              }));
+              check(requests.every(request => done.has(request.id)),
+                'Correzione TM pendente. Attendere il commit verificato, poi ripetere fase:test e Ready for review.');
+            }
+            await checkCorrections(pr, tm.id, selected.id, comments);
             const head = pr.head.sha;
+            async function recoverTestCommit(prNumber, number, planId, testFiles) {
+              const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: prNumber});
+              const message = `Issue #${number}: aggiungi test indipendenti\n\nI-Need-Piano: ${planId}`;
+              const signed = commits.findLast(item => bot(item.author) && item.commit.verification?.verified &&
+                item.commit.message.trimEnd() === message);
+              if (!signed) return null;
+              const {data: commit} = await github.rest.repos.getCommit({...repo, ref: signed.sha});
+              return commit.files?.length === testFiles.length && testFiles.every(file =>
+                commit.files.some(entry => entry.filename === file.filename && entry.status === 'added' && entry.sha === file.sha))
+                ? signed.sha : null;
+            }
             const testMarker = sha => `<!-- i-need:test ${sha} -->`;
             const report = comments.find(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(testMarker(head)));
             if (report) { core.notice('Report già presente sullo SHA corrente.'); return; }
@@ -139,8 +172,9 @@ jobs:
             if (app && testFiles.length) {
               const prior = comments.filter(c => bot(c.user) && c.created_at === c.updated_at &&
                 /^<!-- i-need:test [a-f0-9]{40} -->/.test(c.body || '')).at(-1);
-              check(prior, 'Test già presenti senza un report del Tester. Il TM deve verificare la provenienza.');
-              const previous = /^<!-- i-need:test ([a-f0-9]{40}) -->/.exec(prior.body)[1];
+              const previous = prior ? /^<!-- i-need:test ([a-f0-9]{40}) -->/.exec(prior.body)[1]
+                : await recoverTestCommit(prNumber, number, selected.id, testFiles);
+              check(previous, 'Test già presenti senza evidenza del Tester. Il TM deve verificare la provenienza.');
               const {data: commit} = await github.rest.git.getCommit({...repo, commit_sha: previous});
               const {data: tree} = await github.rest.git.getTree({...repo, tree_sha: commit.tree.sha, recursive: 'true'});
               check(!tree.truncated && testFiles.every(f => tree.tree.some(entry => entry.path === f.filename &&
@@ -175,7 +209,7 @@ jobs:
               check(Buffer.byteLength(prompt) <= maxPromptBytes, 'Il prompt complessivo supera 120.000 byte. Ridurre le fonti o il diff del task.');
               fs.writeFileSync(`${tmp}/prompt.txt`, prompt);
             }
-            save('test.json', {prNumber, number, head, branch: pr.head.ref, app, generate, tests: plan.tests, frames: plan.frames});
+            save('test.json', {prNumber, number, head, tmId: tm.id, planId: selected.id, branch: pr.head.ref, app, generate, tests: plan.tests, frames: plan.frames});
             core.setOutput('esegui', 'true');
             core.setOutput('genera', String(generate));
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
@@ -222,10 +256,34 @@ jobs:
             const check = (ok, message) => { if (!ok) throw new Error(message); };
             const load = name => JSON.parse(fs.readFileSync(`${tmp}/${name}`, 'utf8'));
             const state = load('test.json');
-            const {data: current} = await github.rest.pulls.get({...repo, pull_number: state.prNumber});
-            check(current.state === 'open' && current.draft && current.head.sha === state.head && current.head.ref === state.branch &&
-              current.base.ref === 'main' && current.body === context.payload.pull_request.body &&
-              current.labels.some(label => label.name === 'fase:test'), 'La Draft PR o lo SHA sono cambiati.');
+            async function checkCorrections(pr, tmId, planId, comments) {
+              const prefix = 'RICHIESTA CORREZIONE TM:';
+              const requests = comments.filter(c => c.user.id === tmId && c.user.type === 'User' &&
+                c.created_at === c.updated_at && c.created_at >= pr.created_at &&
+                c.body?.startsWith(prefix) && c.body.slice(prefix.length).trim() && c.body.length <= 6000);
+              if (!requests.length) return;
+              const commits = await github.paginate(github.rest.pulls.listCommits, {...repo, pull_number: pr.number});
+              const marker = new RegExp(`^I-Need: correzione PR ${pr.number}, piano ${planId}\\n\\nRichieste: ([0-9]+(?:,[0-9]+){0,2})$`);
+              const done = new Set(commits.flatMap(item => {
+                const match = marker.exec(item.commit.message.trimEnd());
+                return match && item.author?.login === 'github-actions[bot]' && item.author.type === 'Bot' &&
+                  item.commit.verification?.verified ? match[1].split(',').map(Number) : [];
+              }));
+              check(requests.every(request => done.has(request.id)),
+                'Correzione TM pendente. Attendere il commit verificato, poi ripetere fase:test e Ready for review.');
+            }
+            async function verifyPublication(expectedHead) {
+              const {data: issue} = await github.rest.issues.get({...repo, issue_number: state.number});
+              check(issue.assignees.length === 1 && issue.assignees[0].id === state.tmId,
+                'Il TM assegnato è cambiato durante il test.');
+              const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: state.prNumber});
+              const {data: current} = await github.rest.pulls.get({...repo, pull_number: state.prNumber});
+              await checkCorrections(current, state.tmId, state.planId, comments);
+              const {data: latest} = await github.rest.pulls.get({...repo, pull_number: state.prNumber});
+              check(latest.state === 'open' && latest.draft && latest.head.sha === expectedHead && latest.head.ref === state.branch &&
+                latest.base.ref === 'main' && latest.body === context.payload.pull_request.body &&
+                latest.labels.some(label => label.name === 'fase:test'), 'La Draft PR o lo SHA sono cambiati.');
+            }
             let head = state.head;
             let result = 'N/A per un task documentale o di governance. Tester non invocato.';
             if (state.app) {
@@ -268,6 +326,7 @@ jobs:
                 check(files.length === state.tests.length && files.every(file => state.frames.some(frame => covers(file, frame))) &&
                   state.frames.every(frame => files.filter(file => covers(file, frame)).length === 1),
                   'Ogni frame deve comparire in uno e un solo file di test autorizzato.');
+                await verifyPublication(head);
                 // Aggiorna lo SHA verificato senza checkout del codice della PR.
                 const result = await github.graphql(`
                   mutation($input: CreateCommitOnBranchInput!) {
@@ -275,7 +334,7 @@ jobs:
                   }`, {input: {
                     branch: {repositoryNameWithOwner: process.env.GITHUB_REPOSITORY, branchName: state.branch},
                     expectedHeadOid: state.head,
-                    message: {headline: `Issue #${state.number}: aggiungi test indipendenti`},
+                    message: {headline: `Issue #${state.number}: aggiungi test indipendenti`, body: `I-Need-Piano: ${state.planId}`},
                     fileChanges: {additions: files.map(entry => ({
                       path: entry.file, contents: Buffer.from(entry.content, 'utf8').toString('base64')
                     }))},
@@ -283,5 +342,6 @@ jobs:
                 head = result.createCommitOnBranch.commit.oid;
               }
             }
+            await verifyPublication(head);
             await github.rest.issues.createComment({...repo, issue_number: state.prNumber,
               body: `<!-- i-need:test ${head} -->\n## Test · \`${head}\`\n\n${result}`});
