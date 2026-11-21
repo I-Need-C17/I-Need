@@ -66,11 +66,16 @@ jobs:
               const comments = await github.paginate(github.rest.issues.listComments, {...repo, issue_number: number});
               const marker = `<!-- i-need:piano ${cycle?.id} `;
               const plans = comments.filter(c => bot(c.user) && c.created_at === c.updated_at && c.body?.startsWith(marker));
-              check(plans.length === 1, 'Serve il piano del ciclo corrente.');
-              const selected = plans[0];
+              const selected = plans.at(-1);
+              check(cycle && selected, 'Serve il piano del ciclo corrente.');
               const plan = JSON.parse(selected.body.split('\n', 1)[0].slice(marker.length, -4));
               check(plan.status === 'pronto' && plan.assigned === tm.id && plan.title === issue.title && plan.body === issue.body &&
                 labels.filter(name => name.startsWith('area:')).join() === `area:${plan.area}`, 'Issue o piano obsoleti.');
+              const handled = plan.feedback?.at(-1) ?? selected.id;
+              check(!comments.some(c => c.id > handled && c.user.id === tm.id && c.user.type === 'User' &&
+                c.created_at === c.updated_at && c.body?.startsWith('RICHIESTA REVISIONE PIANO:') &&
+                c.body.slice('RICHIESTA REVISIONE PIANO:'.length).trim() && c.body.length <= 6000),
+                'Ripianificazione pendente. Attendere il nuovo piano e approvarlo.');
               const approval = comments.filter(c => c.user.id === tm.id && c.id > selected.id && c.created_at >= selected.created_at &&
                 c.body?.trim().startsWith('APPROVO PIANO')).at(-1);
               check(approval && approval.created_at === approval.updated_at, 'Serve un nuovo commento di approvazione del TM assegnato.');

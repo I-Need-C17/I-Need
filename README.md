@@ -63,19 +63,29 @@ Test e Revisione.
   `docs/README.md` e guide Markdown in `docs/guide/`. Pipeline, modelli,
   contratti, stack e policy passano da PR umane.
 
-### Diagnosticare e ripetere una fase
+### Ripianificare e correggere
 
-Se il piano è insoddisfacente, il TM chiede al PM di chiarire la Issue o
-le fonti. Il PM riapplica `fase:piano` (rimuovendola prima, se presente).
-Ogni nuovo ciclo richiede una nuova approvazione. Se una fase fallisce,
-apri **Actions**, leggi il primo passo fallito e risolvi la causa prima di
-ripetere il passaggio manuale. Se esiste un
-branch senza Draft PR, il PM verifica l’esito dell’apertura prima di
-intervenire sul branch.
+1. **Piano da rivedere.** Con `fase:piano` ancora sulla Issue, il TM
+   assegnato pubblica un nuovo commento che inizia con
+   `RICHIESTA REVISIONE PIANO:` e descrive le correzioni. Attende la nuova
+   versione, poi pubblica un nuovo `APPROVO PIANO` con i suoi file esatti.
+   Una richiesta inevasa blocca l’implementazione.
+2. **Implementazione da correggere.** Sulla Draft PR, il TM assegnato
+   pubblica un nuovo commento che inizia con `RICHIESTA CORREZIONE TM:`.
+   Indica il problema, il comportamento atteso e gli eventuali test o
+   Test Frame pertinenti. Se la PR è già in review, usa prima **Convert to
+   draft**. Attendi il report col nuovo SHA sul branch della stessa PR.
+3. **Nuovo SHA.** Con la PR ancora Draft, il TM rimuove e riapplica
+   `fase:test`, verifica il report aggiornato e seleziona **Ready for
+   review** per avviare CI e Revisore. Il Tester riusa i test precedenti
+   quando sono identici a quelli del report verificato.
 
-Quando cambia lo SHA dopo il test, riporta la PR in Draft, rimuovi e
-riapplica `fase:test` e ripeti Ready for review. Il job riusa i test
-precedenti se sono identici a quelli del report verificato.
+Sono ammesse tre richieste valide per ciclo di piano e tre per PR.
+Alla quarta richiesta o per cambi di perimetro, requisiti, modelli o
+contratti, fermati e coinvolgi il PM. Se un job fallisce o viene annullato,
+controlla il primo passo in **Actions** e riesegui quel job dopo aver
+risolto la causa. Usa un nuovo commento solo per un nuovo feedback.
+Se esiste un branch senza Draft PR, il PM verifica il tentativo di apertura.
 
 GitHub può sospendere i run di apertura o aggiornamento di una PR
 generati da `GITHUB_TOKEN`. I passaggi umani `fase:test` e Ready for

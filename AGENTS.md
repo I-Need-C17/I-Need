@@ -25,7 +25,8 @@ I profili dei ruoli sono in [.github/agents](.github/agents/).
 ## Responsabilità
 
 - Il PM coordina il lavoro, gestisce le Issue ed esegue il merge finale.
-- Il TM assegnato verifica e approva il piano e avvia l'implementazione.
+- Il TM assegnato verifica e approva ogni versione del piano, avvia
+  l'implementazione e richiede le iterazioni ordinarie.
 - Il Pianificatore propone il piano, l'Implementatore applica le modifiche
   approvate, il Tester produce test in modo indipendente e il Revisore
   esamina il diff. La revisione AI è informativa. Approvazione della PR
@@ -46,6 +47,10 @@ relativi esatti. Segui nomi e interfacce dei modelli approvati.
 - **Chiedi prima** di estendere l'ambito o intervenire su dipendenze,
   modelli, contratti, test esistenti e configurazione. Ottieni l'approvazione
   prima di introdurre servizi AI esterni a consumo.
+- **Iterazioni** Mantieni l'ambito approvato e collega commenti, piano e
+  commit. Una correzione lascia la PR in Draft e richiede test e revisione
+  sul nuovo SHA. Il PM decide sulle modifiche sostanziali e dopo tre
+  richieste valide per ciclo di piano o per PR.
 - **Mai** inserire credenziali o dati personali reali, alterare modelli o
   test senza autorizzazione, cambiare test per farli passare, inviare push
   a `main` o automatizzare approvazione e merge.
