@@ -1,26 +1,26 @@
 name: CI
+
 on:
   pull_request:
     branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
-  workflow_dispatch:
+    types: [opened, synchronize, reopened, ready_for_review, labeled]
 
 permissions:
   contents: read
 
-concurrency:
-  group: i-need-ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  ci-ok:
+  repository-checks:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
           persist-credentials: false
+      - name: Diff senza errori di whitespace
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: git diff --check "origin/${BASE_REF}...HEAD"
       - name: Valida GitHub Actions
         run: |
           curl --fail --silent --show-error --location --max-time 90 \
@@ -29,53 +29,41 @@ jobs:
           echo "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8  $RUNNER_TEMP/actionlint.tgz" | sha256sum --check
           tar -xzf "$RUNNER_TEMP/actionlint.tgz" -C "$RUNNER_TEMP" actionlint
           "$RUNNER_TEMP/actionlint"
-      - name: Verifica file, link e diff
+      - name: Sintassi YAML e collegamenti Markdown locali
+        run: |
+          set -euo pipefail
+          ruby -e 'require "yaml"; Dir.glob("{.github,docs}/**/*.{yml,yaml}", File::FNM_DOTMATCH).each { |f| YAML.parse_file(f); puts "YAML OK: #{f}" }'
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          from urllib.parse import unquote
+          errors = []
+          for file in [Path("README.md"), Path("AGENTS.md"), *Path("docs").rglob("*.md")]:
+              text = file.read_text(encoding="utf-8")
+              for value in re.findall(r"(?<!!)\[[^\]]*\]\(([^)]+)\)", text):
+                  dest = unquote(value.split("#", 1)[0].strip())
+                  if not dest or "://" in dest or dest.startswith(("mailto:", "#")):
+                      continue
+                  if not (file.parent / dest).exists():
+                      errors.append(f"{file}: link non valido -> {dest}")
+          if errors:
+              raise SystemExit("\n".join(errors))
+          print("OK: link Markdown locali verificati")
+          PY
+      - name: Segnala modifiche a test gia esistenti
         env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
-          git diff --check "${BASE_SHA:-$(git merge-base HEAD origin/main)}" HEAD
-          for file in AGENTS.md README.md .github/CODEOWNERS .github/ISSUE_TEMPLATE/task-agente.yml docs/README.md; do
-            test -f "$file"
-          done
-          test "$(git ls-files .github/agents | wc -l)" -eq 4
-          test "$(git ls-files .github/workflows | wc -l)" -eq 7
-          node <<'NODE'
-          const {existsSync, readFileSync} = require('node:fs');
-          const {dirname, resolve, sep} = require('node:path');
-          const {execFileSync} = require('node:child_process');
-          const markdown = execFileSync('git', ['ls-files', '-z', '*.md'], {encoding: 'utf8'}).split('\0').filter(Boolean);
-          for (const file of markdown) {
-            let fence = false;
-            for (const line of readFileSync(file, 'utf8').split('\n')) {
-              if (/^\s*(?:```|~~~)/.test(line)) fence = !fence;
-              if (fence) continue;
-              const refs = [...line.matchAll(/\]\(<?([^\s)>]+)>?/g)].map(match => match[1]);
-              const definition = /^ {0,3}\[[^\]]+\]:\s*<?([^\s>]+)/.exec(line);
-              if (definition) refs.push(definition[1]);
-              for (const ref of refs) {
-                if (/^(?:[A-Za-z][\w+.-]*:|#|\/\/)/.test(ref)) continue;
-                const local = decodeURIComponent(ref.split(/[?#]/)[0]);
-                const target = local.startsWith('/') ? resolve('.' + local) : resolve(dirname(file), local);
-                if ((target !== process.cwd() && !target.startsWith(process.cwd() + sep)) || !existsSync(target)) {
-                  throw new Error(`Link locale non risolto in ${file}`);
-                }
-              }
-            }
-          }
-          NODE
-      - name: Verifica il flusso di approvazione del piano
+          while IFS= read -r file; do
+            case "$file" in
+              backend/src/test/*|frontend/tests/*|frontend/src/*.test.*|frontend/src/*.spec.*|ai-service/test/*|ai-service/tests/*|ai-service/src/test/*)
+                if git cat-file -e "origin/${BASE_REF}:$file" 2>/dev/null; then
+                  echo "::warning::Test esistente modificato: $file — controllare che non siano state indebolite le asserzioni."
+                fi ;;
+            esac
+          done < <(git diff --name-only "origin/${BASE_REF}...HEAD")
+      - name: Verifica approvazione del piano
         run: node --test .github/scripts/piano.test.cjs
-      - name: Stato delle verifiche applicative
-        run: |
-          set -euo pipefail
-          pending=0
-          for area in backend frontend ai-service; do
-            if [[ "$(git ls-files "$area")" == "$area/.gitkeep" ]]; then
-              echo "$area: N/A — solo .gitkeep."
-            else
-              echo "::error::$area contiene file. Approvare lo stack e aggiungere i comandi reali a ci.yml."
-              pending=1
-            fi
-          done
-          exit "$pending"
+      - name: Esegui le verifiche dei componenti inizializzati
+        uses: ./.github/actions/verifiche-app

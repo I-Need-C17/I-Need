@@ -1,143 +1,119 @@
 # I-Need (C-17)
 
 Progetto GPS/IS dell’Università di Salerno per la coabitazione solidale.
-Il monorepo pubblico predispone [backend](backend/), [frontend](frontend/) e
-[servizio AI](ai-service/). Le aree contengono solo `.gitkeep`. Le fonti
-approvate seguono l’[indice in docs](docs/README.md) e le
-[regole comuni](AGENTS.md).
+Lo stack previsto è React/Bootstrap per il frontend, Java/Spring Boot e
+PostgreSQL per il backend, Python/FastAPI per il servizio AI. Versioni,
+dipendenze e comandi definitivi seguiranno l’approvazione dell’SDD.
+
+- [frontend](frontend/), [backend](backend/) e [ai-service](ai-service/) ospitano i componenti applicativi.
+- [Indice delle fonti](docs/README.md) raccoglie i riferimenti al RAD, all’SDD e ai test.
+- [Regole comuni](AGENTS.md) e [profili degli agenti](.github/agents/) definiscono compiti e limiti.
+
+Il workflow adatta le fasi di NeighborCare (C01) e del kit GPS/IS a I-Need.
+Usa Copilot CLI per i quattro ruoli e comandi deterministici per i controlli.
 
 ## Dalla Issue al merge
 
 1. Il **PM** apre una [Issue Task agente](.github/ISSUE_TEMPLATE/task-agente.yml),
-   assegna un TM con **Assignees**, aggiunge una label `area:*` e applica
-   `fase:piano`. Il Pianificatore pubblica un piano riferito a quella Issue e
-   a una snapshot di `main`. Il corpo del piano è Markdown. Actions
-   registra nei metadati la snapshot, il ciclo e i file candidati della Issue.
-2. Il **TM assegnato** controlla il piano, pubblica l’approvazione come
-   nuovo commento, rimuove `fase:piano` e applica `fase:implementazione`.
-   Actions ritrova il piano nella cronologia della Issue e verifica
-   identità, permessi e perimetro, applica le modifiche autorizzate e apre
-   la Draft PR `agent/issue-<N>-implementazione`.
-3. Il **TM** applica `fase:test` alla Draft PR. Per un task applicativo, il
-   Tester usa fonti e firme pubbliche per produrre i nuovi test. Il commento
-   registra frame e SHA da verificare in CI. Per documentazione e governance
-   registra **N/A**.
-4. Il **TM** verifica il commento relativo allo SHA corrente, completa la
-   checklist PR e seleziona **Ready for review**. Partono `ci-ok` e una
-   revisione AI informativa. Un'altra persona approva la PR e il **PM**
-   verifica gli esiti sul commit finale prima di eseguire il merge.
+   assegna un solo TM, aggiunge la label di area e applica `fase:piano`.
+   Il Pianificatore legge il checkout della snapshot di `main` in sola lettura
+   e pubblica il piano in Markdown sulla Issue.
+2. Il **TM assegnato** verifica il piano e lo approva in un nuovo commento.
+   Poi rimuove `fase:piano` e applica `fase:implementazione`. L’Implementatore
+   verifica l’approvazione, modifica i file autorizzati, esegue i controlli
+   disponibili e apre la Draft PR `agent/issue-N-implementazione` con `Closes #N`.
+3. Il **TM** applica `fase:test` sulla Draft PR. Il Tester indipendente deriva
+   i test dai frame, esegue le verifiche disponibili e pubblica un report
+   sullo SHA risultante. Per una PR documentale o di governance
+   registra **N/A** per i test applicativi.
+4. Il **TM** controlla il diff e il report del Tester, quindi seleziona **Ready
+   for review**. La CI `repository-checks` verifica il contenuto della PR.
+   Il Revisore AI pubblica un report sullo SHA esaminato.
+5. Un **Code Owner umano diverso dall’autore** esamina la PR dopo i report
+   e la approva sul commit corrente. Per le PR agentiche il revisore è
+   anche diverso dal TM assegnato. `governance-gate` verifica review,
+   report e run associati. Il **PM** fa il merge dopo i controlli richiesti.
 
-Il TM verifica le fonti e il perimetro del piano. Se il Pianificatore segnala
-un blocco, il TM chiede una ripianificazione o coinvolge il PM. Quando il
-piano è applicabile, pubblica l’approvazione dopo la versione vigente e
-indica solo i file necessari al piano, uno per riga, tra i candidati della
-Issue. Quel commento definisce i file autorizzati per l’implementazione.
+L’approvazione del piano spetta al TM assegnato con almeno Write. Il commento
+deve seguire la versione vigente del piano ed elencare uno per riga i soli
+file necessari tra i candidati della Issue. L’ID del commento del piano è
+facoltativo. Se presente, deve riferirsi alla versione vigente.
 
 ```text
 APPROVO PIANO
 File autorizzati:
-- docs/README.md
+- README.md
 ```
 
-Il workflow usa i permessi del repository. L’avvio del piano richiede
-Maintain/Admin. L’approvazione e l’avvio dell’implementazione spettano al
-TM assegnato con almeno Write. Il PM con Maintain/Admin può avviare anche
-Test e Revisione.
+## Compilare la Issue
 
-### Compilare la Issue
+- Usa una sola label `area:frontend`, `area:backend` o `area:ai-service`.
+  Indica obiettivo, comportamento atteso, limiti e dipendenze pertinenti.
+- Nel campo **File** usa `File: percorso` per i candidati e `Test: percorso`
+  per i test nuovi. Usa percorsi relativi esatti. I sorgenti agentici stanno
+  in `src/` o `app/` dell’area. Il Tester usa `backend/src/test/`,
+  `frontend/tests/` o file `.test.*` e `.spec.*` in `frontend/src/`, e
+  `ai-service/test/`, `ai-service/tests/` o `ai-service/src/test/`.
+- In **Fonti e frame** indica `Requisito: ID` e `Riferimento: percorso` per le
+  fonti testuali UTF-8 versionate. Sono disponibili anche `UC:`, `Sequence:`, `Class:`,
+  `Firme:` e `Modello:`. Per il Tester aggiungi `CP: percorso`,
+  `TF: percorso` (file distinti in `docs/test/`) e una riga `Frame: ID`
+  per ogni frame pertinente.
+- Per attività documentali usa `Riferimento: percorso` oppure `N/A - motivo`.
+  L’Implementatore può modificare README, l’indice delle fonti e le guide
+  Markdown in `docs/guide/`. Modelli, dipendenze e configurazione passano
+  da PR umane.
 
-- In **File** indica i candidati con una riga `File: percorso` ciascuno.
-  Per la fase Test aggiungi `Test: percorso` per ogni nuovo test. Scrivi
-  percorsi relativi esatti, senza wildcard. I sorgenti agentici stanno in
-  `src/` o `app/` dell’area. I nuovi test stanno in `test/`, `tests/` o
-  `src/test/` dell’area.
-- Per un task applicativo, in **Fonti e frame** usa `Requisito: ID` e
-  `Riferimento: percorso` per gli artefatti approvati pertinenti, già
-  versionati su `main`. Puoi usare `UC:`, `Sequence:`, `Class:`,
-  `Firme:` e `Modello:` per specificare il tipo della fonte. Cita solo
-  i file pertinenti in formato testuale UTF-8, come `.md`, `.mmd`,
-  `.puml` e `.drawio`. Il prompt complessivo ha un limite di 120.000 byte
-  per il passaggio alla CLI.
-- Prepara i dati del Tester prima di avviare un task applicativo da portare
-  fino alla revisione. Il Tester richiede `CP: percorso`, `TF: percorso`,
-  `Frame: ID` e le righe `Test: percorso` dei nuovi file. Cita anche le
-  firme pubbliche se necessarie per derivare i test.
-- Per documentazione e governance usa `Riferimento: percorso` oppure
-  `N/A - motivo`. L’ambito agentico comprende `README.md`,
-  `docs/README.md` e guide Markdown in `docs/guide/`. Pipeline, modelli,
-  contratti, stack e policy passano da PR umane.
+## Ripianificazione e correzione
 
-### Ripianificare e correggere
+- Con `fase:piano` sulla Issue, il TM può pubblicare
+  `RICHIESTA REVISIONE PIANO:` seguito dal feedback. Attende la nuova
+  versione e la approva con un nuovo commento.
+- Sulla Draft PR il TM usa `RICHIESTA CORREZIONE TM:` per correggere il
+  lavoro entro il perimetro approvato. Se la PR è già in review, la riporta
+  in Draft. Dopo la correzione rimuove e riapplica `fase:test`, verifica
+  il nuovo report e seleziona di nuovo **Ready for review**.
+- Dopo tre richieste valide si ferma il ciclo. Per modifiche ai requisiti
+  o al perimetro, il TM segnala il blocco e il PM apre una nuova Issue
+  quando la nuova attività è definita.
 
-1. **Piano da rivedere.** Con `fase:piano` ancora sulla Issue, il TM
-   assegnato pubblica un nuovo commento che inizia con
-   `RICHIESTA REVISIONE PIANO:` e descrive le correzioni. Attende la nuova
-   versione, poi pubblica un nuovo `APPROVO PIANO` con i percorsi esatti
-   scelti tra i candidati della Issue.
-   Una richiesta inevasa blocca l’implementazione.
-2. **Implementazione da correggere.** Sulla Draft PR, il TM assegnato
-   pubblica un nuovo commento che inizia con `RICHIESTA CORREZIONE TM:`.
-   Indica il problema, il comportamento atteso e gli eventuali test o
-   Test Frame pertinenti. Se la PR è già in review, usa prima **Convert to
-   draft**. Attendi il report col nuovo SHA sul branch della stessa PR.
-3. **Nuovo SHA.** Con la PR ancora Draft, il TM rimuove e riapplica
-   `fase:test`, verifica il report aggiornato e seleziona **Ready for
-   review** per avviare CI e Revisore. Il Tester riusa i test precedenti
-   quando sono identici a quelli del report verificato.
+## CI e bootstrap
 
-Sono ammesse tre richieste valide per ciclo di piano e tre per PR.
-Alla quarta richiesta o per cambi di perimetro, requisiti, modelli o
-contratti, fermati e coinvolgi il PM. Se un job fallisce o viene annullato,
-controlla il primo passo in **Actions** e riesegui quel job dopo aver
-risolto la causa. Usa un nuovo commento solo per un nuovo feedback.
-Se esiste un branch senza Draft PR, il PM verifica il tentativo di apertura.
+`repository-checks` verifica diff, workflow, collegamenti Markdown e
+regressioni del controllo di approvazione. Per backend e frontend prevede rispettivamente
+`mvn -B verify` e `npm ci`, `npm run build`, `npm run test:ci`,
+quando le PR di bootstrap approvano i manifest, i lockfile e le versioni.
+Il bootstrap del servizio AI introdurrà i comandi Python approvati
+nell’[azione condivisa](.github/actions/verifiche-app/action.yml).
+Fino al bootstrap, i componenti senza manifest risultano **N/A**.
+Una PR applicativa usa `Closes #N` o `Fixes #N`. Per la prima PR che
+introduce il manifest di un componente, il gate richiede CI, report del
+Revisore e approvazione umana. Il report del Tester applicativo è
+facoltativo. La PR di bootstrap Python può aggiornare anche l’azione
+condivisa per introdurre i comandi approvati.
 
-GitHub può sospendere i run di apertura o aggiornamento di una PR
-generati da `GITHUB_TOKEN`. I passaggi umani `fase:test` e Ready for
-review avviano i job sullo stato corrente. Test e Revisione usano
-`pull_request_target`, caricano la configurazione di `main` e leggono
-metadati, file e diff della PR via API. Il Tester scrive in un workspace
-separato per evitare il checkout della PR nel job privilegiato. La CI usa `pull_request` con
-permessi di lettura. Il check GitHub vale per il commit di merge di prova
-o per il relativo head secondo lo stato della PR. [Eventi di GitHub Actions](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
+## Configurazione GitHub e collaudo
 
-## Attivazione PM
-
-1. In **Organization → Teams** verifica gli slug `project-managers` e
-   `tech-members`, la visibilità e Write esplicito per CODEOWNERS.
-   Garantisci un revisore diverso dal TM responsabile. In **Settings →
-   Actions → General** consenti le Action usate e **Allow GitHub Actions
-   to create and approve pull requests**, necessario per aprire la Draft PR.
-2. Fai revisionare la PR di configurazione e attendi `ci-ok`. Il ruleset
-   di `main` è temporaneamente disattivato durante la configurazione.
-   Riattivalo in **Settings → Rules → Rulesets** prima del lavoro ordinario
-   del team, con PR obbligatoria, almeno
-   un’approvazione umana, Code Owner review, revoca delle approvazioni stale,
-   `ci-ok` da GitHub Actions, blocco cancellazioni e force push, senza bypass.
-   Aggiungi `ci-ok` appena selezionabile. Il merge umano rende disponibili
-   su `main` i sette workflow GitHub Actions (sei agentici e uno CI) per
-   i quattro agenti. Ciascun workflow parte al proprio evento. [Ruleset](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets)
-3. Dopo il via libera del PM, usa un account Student e crea una credenziale
-   fine-grained con **Copilot Requests**. In **Settings → Environments**
-   crea `copilot-student`, limita **Deployment branches and tags** al
-   branch `main` e salva `COPILOT_GITHUB_TOKEN` come secret dell’ambiente.
-   Tieni la credenziale fuori da Issue, PR, chat e file.
-4. Prova una Issue documentale fino a Ready for review, poi prova i blocchi
-   per scope estraneo, approvazione obsoleta e fork. Controlla che un nuovo
-   commit richieda nuovi esiti. Il collaudo completo del Tester richiede
-   stack, fonti, Category Partition e frame reali.
-
-Il merge è riservato ai PM come regola del team. Per imporlo con GitHub
-mantenendo Write ai TM, collauda un secondo ruleset con **Restrict
-updates** e bypass per il solo team PM **For pull requests only**.
-Il ruleset principale deve continuare a imporre CI e review anche ai PM.
-
-### Bootstrap applicativo
-
-`ci-ok` controlla workflow, diff, struttura e link Markdown e riporta
-N/A per ogni area con solo `.gitkeep`. Quando il team
-approva uno stack, la PR di bootstrap introduce manifest, dipendenze e
-i relativi comandi nel job `ci-ok`, sostituendo il ramo N/A per quell’area.
-I comandi dei test devono selezionare i frame pertinenti e fallire se
-manca un test applicabile o un’asserzione fallisce. Il job Test privilegiato
-genera e versiona i test. Gli esiti di esecuzione spettano alla CI.
+- I team `project-managers` e `tech-members` servono a
+  [CODEOWNERS](.github/CODEOWNERS). Verificare che abbiano accesso Write.
+  Il PM avvia `fase:piano` con Maintain o Admin.
+- Abilitare in GitHub Actions la creazione delle Draft PR. Configurare
+  il secret `COPILOT_GITHUB_TOKEN` nell’ambiente `copilot-student`,
+  limitato a `main`. Test e Revisione usano i trigger su PR interne
+  con configurazione del branch base. Le label e **Ready for review**
+  sono passaggi umani, anche quando la PR è aperta dal bot.
+- Sul ruleset di `main` richiedere PR, approvazione del Code Owner,
+  revoca delle approvazioni obsolete, risoluzione delle conversazioni
+  e `repository-checks`. Aggiungere `governance-gate` dopo il collaudo
+  e verificare che entrambi i check provengano da GitHub Actions.
+  Bloccare cancellazioni e force push. Per riservare tecnicamente il merge
+  ai PM, usare una regola separata **Restrict updates** con il team PM
+  abilitato **For pull requests only**.
+- Dopo l’aggiornamento di `main`, aprire una nuova Issue documentale
+  di collaudo e applicare `fase:piano`. La prova deve arrivare fino
+  alla Draft PR, al Tester e al Revisore. Se la modifica è temporanea,
+  chiudere la PR dopo la review e verificare il merge protetto con una
+  successiva PR destinata a restare.
+- Se il gate parte prima della conclusione di un run, attendere i report
+  sullo SHA esatto e la review umana. Se serve, rieseguire il gate dopo
+  che le evidenze sono disponibili.

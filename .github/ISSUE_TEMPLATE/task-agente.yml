@@ -5,7 +5,7 @@ labels: [task-agente]
 body:
   - type: markdown
     attributes:
-      value: Scegli un TM in Assignees. Il PM assegna una sola label di area.
+      value: Il PM assegna un solo TM e una label di area, poi avvia fase:piano.
   - type: dropdown
     id: tipo
     attributes:
@@ -17,7 +17,7 @@ body:
     id: obiettivo
     attributes:
       label: Obiettivo e criteri
-      description: Indica risultato atteso, criteri di accettazione ed eventuali blocchi.
+      description: Indica risultato atteso, criteri di accettazione, dipendenze ed eventuali blocchi.
     validations:
       required: true
   - type: textarea

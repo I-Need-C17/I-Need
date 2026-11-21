@@ -107,7 +107,11 @@ jobs:
               names.every(name => name.length <= 200 && exactPath.test(name));
             const candidates = entries(sections.File, 'File');
             const tests = entries(sections.File, 'Test');
-            const testRoot = new RegExp(`^${area}/(?:tests?|src/test)/`);
+            const testRoot = {
+              backend: /^backend\/src\/test\//,
+              frontend: /^frontend\/(?:tests\/|src\/.+\.(?:test|spec)\.[A-Za-z0-9]+$)/,
+              'ai-service': /^ai-service\/(?:tests?|src\/test)\//,
+            }[area];
             const sourceRoot = new RegExp(`^${area}/(?:src|app)/`);
             const protectedName = /(?:^|\/)(?:AGENTS\.md|copilot-instructions\.md|pom\.xml|[^/]*\.gradle(?:\.kts)?|package(?:-lock)?\.json|pyproject\.toml|(?:requirements.*\.txt)|[^/]*lock\.ya?ml)$/i;
             const testName = /(?:\/tests?\/|\/__tests__\/|(?:^|\/)test_|(?:[._-](?:test|spec)|Test|Tests)\.[^/]+$)/;
@@ -188,9 +192,7 @@ jobs:
         run: |
           set -euo pipefail
           test -n "$COPILOT_GITHUB_TOKEN" || { echo "::error::Secret Copilot assente."; exit 1; }
-          mkdir -p "$RUNNER_TEMP/contesto/.github/agents"
-          cp ".github/agents/pianificatore.agent.md" "$RUNNER_TEMP/contesto/.github/agents/"
-          cd "$RUNNER_TEMP/contesto"
+          cd "$GITHUB_WORKSPACE"
           export COPILOT_HOME="$RUNNER_TEMP/copilot-home" COPILOT_CACHE_HOME="$RUNNER_TEMP/copilot-cache"
           export COPILOT_PLUGIN_DIR_ONLY=true COPILOT_DISABLE_LOGIN_SHELL_ENV=1
           copilot_stderr="$(mktemp "$RUNNER_TEMP/copilot-stderr.XXXXXX")"
