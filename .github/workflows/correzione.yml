@@ -263,14 +263,27 @@ jobs:
           done <<< "$files"
           export COPILOT_HOME="$RUNNER_TEMP/copilot-home" COPILOT_CACHE_HOME="$RUNNER_TEMP/copilot-cache"
           export COPILOT_PLUGIN_DIR_ONLY=true COPILOT_DISABLE_LOGIN_SHELL_ENV=1
+          copilot_stderr="$(mktemp "$RUNNER_TEMP/copilot-stderr.XXXXXX")"
+          trap 'rm -f -- "$copilot_stderr"' EXIT
           timeout 360 "$RUNNER_TEMP/copilot/node_modules/.bin/copilot" --agent implementatore \
             --trust-folder --no-custom-instructions --disable-builtin-mcps --no-auto-update \
             --no-ask-user --no-experimental --disallow-temp-dir --no-bash-env \
             --available-tools view create edit "${write_rules[@]}" --deny-tool=shell --deny-tool=memory \
             --secret-env-vars=COPILOT_GITHUB_TOKEN --sync-session=off --disable-client-telemetry \
-            --max-ai-credits 3 --model auto --silent --no-color --log-level none --stream off \
-            --prompt "$(cat "$RUNNER_TEMP/prompt.txt")" 2>/dev/null | head -c 2001 > "$RUNNER_TEMP/esito.txt" \
-            || { echo "::error::Copilot CLI interrotta. Verificare credenziale, quota e limite di durata."; exit 1; }
+            --max-ai-credits 30 --model auto --silent --no-color --log-level none --stream off \
+            --prompt "$(cat "$RUNNER_TEMP/prompt.txt")" 2>"$copilot_stderr" | head -c 2001 > "$RUNNER_TEMP/esito.txt" \
+            || {
+              status=("${PIPESTATUS[@]}")
+              printf '::error::Copilot CLI exit code %s (acquisizione stdout: %s).\n' "${status[0]}" "${status[1]}"
+              head -n 12 "$copilot_stderr" | LC_ALL=C tr -cd '\11\12\40-\176' | sed -E \
+                's/(github_pat_|gh[pousr]_)[[:alnum:]_]+/[REDACTED]/gi;
+                 s/(Bearer[[:space:]]+)[^[:space:]]+/\1[REDACTED]/gi;
+                 s/((token|authorization|api_key|password)[" ]*[:=][" ]*)[^ ,;"[:space:]]+/\1[REDACTED]/gi' |
+                while IFS= read -r line || [[ -n "$line" ]]; do
+                  printf 'Copilot stderr | %.500s\n' "${line//"$COPILOT_GITHUB_TOKEN"/[REDACTED]}"
+                done
+              exit 1
+            }
       - name: Convalida e pubblica sul branch della Draft PR
         if: steps.controllo.outputs.esegui == 'true'
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
