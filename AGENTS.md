@@ -26,7 +26,9 @@ I profili dei ruoli sono in [.github/agents](.github/agents/).
 
 - Il PM coordina il lavoro, gestisce le Issue ed esegue il merge finale.
 - Il TM assegnato verifica e approva ogni versione del piano, avvia
-  l'implementazione e richiede le iterazioni ordinarie.
+  l'implementazione e richiede le iterazioni ordinarie. Il suo commento
+  autorizza i file necessari al piano tra i candidati della Issue. Se il
+  piano segnala un blocco, il TM ne chiede la risoluzione prima di approvare.
 - Il Pianificatore propone il piano, l'Implementatore applica le modifiche
   approvate, il Tester produce test in modo indipendente e il Revisore
   esamina il diff. La revisione AI è informativa. Approvazione della PR

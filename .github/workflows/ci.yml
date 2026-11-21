@@ -64,6 +64,8 @@ jobs:
             }
           }
           NODE
+      - name: Verifica il flusso di approvazione del piano
+        run: node --test .github/scripts/piano.test.cjs
       - name: Stato delle verifiche applicative
         run: |
           set -euo pipefail

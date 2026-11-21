@@ -24,7 +24,7 @@ body:
     id: file
     attributes:
       label: File
-      description: "Una riga File: percorso per ogni candidato. Per il Tester, una riga Test: percorso per ogni nuovo test."
+      description: "Una riga File: percorso per ogni candidato. Il TM sceglie i file da autorizzare tra questi candidati. Per il Tester, una riga Test: percorso per ogni nuovo test."
     validations:
       required: true
   - type: textarea

@@ -11,7 +11,8 @@ approvate seguono l’[indice in docs](docs/README.md) e le
 1. Il **PM** apre una [Issue Task agente](.github/ISSUE_TEMPLATE/task-agente.yml),
    assegna un TM con **Assignees**, aggiunge una label `area:*` e applica
    `fase:piano`. Il Pianificatore pubblica un piano riferito a quella Issue e
-   a una snapshot di `main`.
+   a una snapshot di `main`. Il corpo del piano è Markdown. Actions
+   registra nei metadati la snapshot, il ciclo e i file candidati della Issue.
 2. Il **TM assegnato** controlla il piano, pubblica l’approvazione come
    nuovo commento, rimuove `fase:piano` e applica `fase:implementazione`.
    Actions ritrova il piano nella cronologia della Issue e verifica
@@ -26,8 +27,11 @@ approvate seguono l’[indice in docs](docs/README.md) e le
    revisione AI informativa. Un'altra persona approva la PR e il **PM**
    verifica gli esiti sul commit finale prima di eseguire il merge.
 
-Pubblica l’approvazione dopo il piano vigente. Indica tutti e soli i suoi
-file, uno per riga.
+Il TM verifica le fonti e il perimetro del piano. Se il Pianificatore segnala
+un blocco, il TM chiede una ripianificazione o coinvolge il PM. Quando il
+piano è applicabile, pubblica l’approvazione dopo la versione vigente e
+indica solo i file necessari al piano, uno per riga, tra i candidati della
+Issue. Quel commento definisce i file autorizzati per l’implementazione.
 
 ```text
 APPROVO PIANO
@@ -68,7 +72,8 @@ Test e Revisione.
 1. **Piano da rivedere.** Con `fase:piano` ancora sulla Issue, il TM
    assegnato pubblica un nuovo commento che inizia con
    `RICHIESTA REVISIONE PIANO:` e descrive le correzioni. Attende la nuova
-   versione, poi pubblica un nuovo `APPROVO PIANO` con i suoi file esatti.
+   versione, poi pubblica un nuovo `APPROVO PIANO` con i percorsi esatti
+   scelti tra i candidati della Issue.
    Una richiesta inevasa blocca l’implementazione.
 2. **Implementazione da correggere.** Sulla Draft PR, il TM assegnato
    pubblica un nuovo commento che inizia con `RICHIESTA CORREZIONE TM:`.
