@@ -26,7 +26,8 @@ riferimento ai documenti approvati.
 - **Tester:** esegue le verifiche applicabili e pubblica il report sullo SHA.
 - **Revisore AI:** confronta il diff con i modelli approvati e pubblica il
   report.
-- **Code Owner umano:** esamina e approva la PR con indipendenza dall'autore.
+- **Code Owner umano:** nelle PR agentiche approva la PR ed è diverso sia
+  dall'autore della PR sia dal TM assegnato.
 
 ## Due approvazioni distinte
 
