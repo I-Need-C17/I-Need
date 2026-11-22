@@ -52,98 +52,102 @@ jobs:
                  path.startsWith('docs/');
             });
 
-            // Eccezione SOLO per il primo bootstrap di un modulo vuoto:
-            // richiede Revisore AI, Code Owner e CI; Tester applicativo N/A.
-            const buildAction = '.github/actions/verifiche-app/action.yml';
-            const modules = files.filter(f => f.filename !== buildAction);
-            let bootstrap = !docsOnly && modules.length > 0 &&
-              modules.every(f => f.filename.startsWith('frontend/') ||
-                                f.filename.startsWith('backend/') || f.filename.startsWith('ai-service/'));
-            if (bootstrap) {
-              const roots = [...new Set(modules.map(f => f.filename.split('/')[0]))];
-              if (files.length !== modules.length && !roots.includes('ai-service')) bootstrap = false;
-              for (const root of roots) {
-                const manifests = {
-                  frontend: ['frontend/package.json'],
-                  backend: ['backend/pom.xml'],
-                  'ai-service': ['ai-service/pyproject.toml', 'ai-service/requirements.txt'],
-                }[root];
-                const manifest = manifests.find(path => files.some(f => f.filename === path && f.status === 'added'));
-                if (!manifest) {
-                  bootstrap = false; break;
-                }
-                for (const path of manifests) {
-                  try {
-                    await github.rest.repos.getContent({...context.repo, path, ref: pr.base.sha});
-                    bootstrap = false;
-                  } catch (error) {
-                    if (error.status !== 404) throw error;
-                  }
-                }
-                if (!bootstrap) break;
-              }
-            }
-
             const linkedIssue = (pr.body || '').match(/\b(?:Closes|Fixes)\s+#(\d+)\b/i);
             if (!docsOnly && !linkedIssue) {
               problems.push('La PR applicativa deve collegare la Issue con Closes #N o Fixes #N.');
             }
             const taskBranch = /^agent\/issue-([1-9]\d*)-implementazione$/.exec(pr.head.ref);
-            let responsibleId;
-            if (taskBranch) {
+
+            async function verifyAgenticPr(issueNumber) {
               const {data: issue} = await github.rest.issues.get({
-                ...context.repo, issue_number: Number(taskBranch[1])
+                ...context.repo, issue_number: Number(issueNumber)
               });
-              responsibleId = issue.assignees?.length === 1 ? issue.assignees[0].id : undefined;
-              if (!responsibleId || linkedIssue?.[1] !== taskBranch[1] || pr.user?.login !== 'github-actions[bot]') {
+              const responsibleId = issue.assignees?.length === 1 ? issue.assignees[0].id : undefined;
+              if (!responsibleId || linkedIssue?.[1] !== issueNumber || pr.user?.login !== 'github-actions[bot]') {
                 problems.push('La PR agentica deve essere collegata alla Issue con un solo TM assegnato.');
               }
-            }
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              ...context.repo, issue_number: prNumber, per_page: 100
-            });
-            const aiReport = comments.findLast(c =>
-              c.user?.login === 'github-actions[bot]' && c.created_at === c.updated_at &&
-              (c.body || '').startsWith(`## Revisione AI — PR #${prNumber}\n\nCommit esaminato: ${sha}\nRun Actions: `)
-            );
-            if (!aiReport) {
-              problems.push('Manca il report del Revisore AI sul commit ' + sha.slice(0, 12) + '.');
-            }
 
-            const testerReport = comments.findLast(c => {
-              if (c.user?.login !== 'github-actions[bot]' || c.created_at !== c.updated_at) return false;
-              const body = c.body || '';
-              if (docsOnly) {
-                return body.startsWith(`## Tester indipendente — verifica documentale\n\nCommit esaminato: ${sha}\nRun Actions: `);
+              // Eccezione SOLO per il primo bootstrap di un modulo vuoto:
+              // richiede Revisore AI, Code Owner e CI; Tester applicativo N/A.
+              const buildAction = '.github/actions/verifiche-app/action.yml';
+              const modules = files.filter(f => f.filename !== buildAction);
+              let bootstrap = !docsOnly && modules.length > 0 &&
+                modules.every(f => f.filename.startsWith('frontend/') ||
+                                  f.filename.startsWith('backend/') || f.filename.startsWith('ai-service/'));
+              if (bootstrap) {
+                const roots = [...new Set(modules.map(f => f.filename.split('/')[0]))];
+                if (files.length !== modules.length && !roots.includes('ai-service')) bootstrap = false;
+                for (const root of roots) {
+                  const manifests = {
+                    frontend: ['frontend/package.json'],
+                    backend: ['backend/pom.xml'],
+                    'ai-service': ['ai-service/pyproject.toml', 'ai-service/requirements.txt'],
+                  }[root];
+                  const manifest = manifests.find(path => files.some(f => f.filename === path && f.status === 'added'));
+                  if (!manifest) {
+                    bootstrap = false; break;
+                  }
+                  for (const path of manifests) {
+                    try {
+                      await github.rest.repos.getContent({...context.repo, path, ref: pr.base.sha});
+                      bootstrap = false;
+                    } catch (error) {
+                      if (error.status !== 404) throw error;
+                    }
+                  }
+                  if (!bootstrap) break;
+                }
               }
-              const [title, , start, end, run, result] = body.split('\n', 6);
-              return title === `## Tester indipendente — PR #${prNumber}` &&
-                /^Commit di partenza: [a-f0-9]{40}$/.test(start || '') &&
-                end === `Commit dopo il test: ${sha}` && /^Run Actions: [1-9]\d*$/.test(run || '') &&
-                result === 'Risultato dei test automatici (exit code): 0';
-            });
-            if (!testerReport && !bootstrap) {
-              problems.push('Manca il Tester riuscito e riferito al commit corrente.');
-            }
-            if (bootstrap) {
-              core.notice('Primo bootstrap: Tester applicativo N/A; verificare build e test reali nella CI.');
-            }
 
-            async function successfulRun(report, name) {
-              const id = report?.body.match(/^Run Actions: ([1-9]\d*)$/m)?.[1];
-              if (!id) return false;
-              const {data: run} = await github.rest.actions.getWorkflowRun({
-                ...context.repo, run_id: Number(id)
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                ...context.repo, issue_number: prNumber, per_page: 100
               });
-              return run.name === name && run.event === 'pull_request_target' &&
-                run.status === 'completed' && run.conclusion === 'success';
+              const aiReport = comments.findLast(c =>
+                c.user?.login === 'github-actions[bot]' && c.created_at === c.updated_at &&
+                (c.body || '').startsWith(`## Revisione AI — PR #${prNumber}\n\nCommit esaminato: ${sha}\nRun Actions: `)
+              );
+              if (!aiReport) {
+                problems.push('Manca il report del Revisore AI sul commit ' + sha.slice(0, 12) + '.');
+              }
+
+              const testerReport = comments.findLast(c => {
+                if (c.user?.login !== 'github-actions[bot]' || c.created_at !== c.updated_at) return false;
+                const body = c.body || '';
+                if (docsOnly) {
+                  return body.startsWith(`## Tester indipendente — verifica documentale\n\nCommit esaminato: ${sha}\nRun Actions: `);
+                }
+                const [title, , start, end, run, result] = body.split('\n', 6);
+                return title === `## Tester indipendente — PR #${prNumber}` &&
+                  /^Commit di partenza: [a-f0-9]{40}$/.test(start || '') &&
+                  end === `Commit dopo il test: ${sha}` && /^Run Actions: [1-9]\d*$/.test(run || '') &&
+                  result === 'Risultato dei test automatici (exit code): 0';
+              });
+              if (!testerReport && !bootstrap) {
+                problems.push('Manca il Tester riuscito e riferito al commit corrente.');
+              }
+              if (bootstrap) {
+                core.notice('Primo bootstrap: Tester applicativo N/A; verificare build e test reali nella CI.');
+              }
+
+              async function successfulRun(report, name) {
+                const id = report?.body.match(/^Run Actions: ([1-9]\d*)$/m)?.[1];
+                if (!id) return false;
+                const {data: run} = await github.rest.actions.getWorkflowRun({
+                  ...context.repo, run_id: Number(id)
+                });
+                return run.name === name && run.event === 'pull_request_target' &&
+                  run.status === 'completed' && run.conclusion === 'success';
+              }
+              if (aiReport && !await successfulRun(aiReport, 'Revisore')) {
+                problems.push('Il run del Revisore associato al report non risulta riuscito.');
+              }
+              if (!bootstrap && testerReport && !await successfulRun(testerReport, 'Tester indipendente')) {
+                problems.push('Il run del Tester associato al report non risulta riuscito.');
+              }
+
+              return responsibleId;
             }
-            if (aiReport && !await successfulRun(aiReport, 'Revisore')) {
-              problems.push('Il run del Revisore associato al report non risulta riuscito.');
-            }
-            if (!bootstrap && testerReport && !await successfulRun(testerReport, 'Tester indipendente')) {
-              problems.push('Il run del Tester associato al report non risulta riuscito.');
-            }
+            const responsibleId = taskBranch ? await verifyAgenticPr(taskBranch[1]) : undefined;
 
             const reviewList = await github.paginate(github.rest.pulls.listReviews, {
               ...context.repo, pull_number: prNumber, per_page: 100
@@ -165,4 +169,7 @@ jobs:
               core.setFailed(problems.map(s => '- ' + s).join('\n'));
               return;
             }
-            core.notice('Gate superato: review umana, Tester (se applicabile) e Revisore verificati sullo SHA corrente. Il Ruleset verifica la review del Code Owner e repository-checks.');
+            core.notice(taskBranch
+              ? 'Gate superato: review umana, Tester se applicabile e Revisore verificati sullo SHA corrente.'
+              : 'Gate superato: review umana verificata sullo SHA corrente della PR manuale.');
+            core.notice('Il Ruleset verifica la review del Code Owner e repository-checks.');
