@@ -1,0 +1,46 @@
+---
+config:
+  layout: elk
+  securityLevel: loose
+  flowchart:
+    htmlLabels: true
+    padding: 0
+  elk:
+    mergeEdges: false
+    nodePlacementStrategy: BRANDES_KOEPF
+    forceNodeModelOrder: true
+    considerModelOrder: NODES_AND_EDGES
+  themeCSS: "foreignObject{overflow:visible !important;} .comp{position:relative;width:210px;height:56px;box-sizing:border-box;padding:6px 14px 0 14px;text-align:center;font-family:Arial;font-size:13px;line-height:1.25;color:#000;} .comp::before,.comp::after{content:'';position:absolute;left:-26px;width:20px;height:11px;background:#fff;border:1px solid #000;box-sizing:border-box;} .comp::before{top:9px;} .comp::after{top:30px;}"
+---
+flowchart TB
+    PROP["<div class='comp'>Gestione proposte</div>"]
+    MATCH["<div class='comp'>Gestione matching</div>"]
+    ABIT["<div class='comp'>Gestione abitazione</div>"]
+    AI["<div class='comp'>Modulo AI</div>"]
+    RICH["<div class='comp'>Gestione richieste abitative</div>"]
+    CONV["<div class='comp'>Gestione convivenza</div>"]
+    AUTH["<div class='comp'>Autenticazione</div>"]
+    IDP["<div class='comp'>Interfacciamento dati persistenti</div>"]
+    STO["<div class='comp'>Storage</div>"]
+
+    PROP -.-> ABIT
+    PROP -.-> MATCH
+    PROP -.-> RICH
+    PROP -.-> AUTH
+    PROP -.-> IDP
+    MATCH -.-> ABIT
+    MATCH -.-> AI
+    MATCH -.-> RICH
+    MATCH -.-> IDP
+    ABIT -.-> AUTH
+    RICH -.-> AUTH
+    CONV -.-> AUTH
+    ABIT -.-> IDP
+    RICH -.-> IDP
+    CONV -.-> IDP
+    AUTH -.-> IDP
+    IDP -.-> STO
+
+    classDef sub fill:#ffffff,stroke:#000000,stroke-width:1px,color:#000000
+    class PROP,MATCH,ABIT,AI,RICH,CONV,AUTH,IDP,STO sub
+    linkStyle default stroke:#000000,stroke-width:1px

@@ -1,0 +1,127 @@
+@startuml AD_ActivityDiagram_SistemaAttuale
+' ATTENZIONE: trascrizione della struttura del draw.io, non revisione progettuale.
+' L'originale contiene due nodi iniziali (Host e Guest); il fork iniziale
+' mantiene l'indipendenza temporale dei rispettivi flussi, che confluiscono
+' nell'Operatore alla disponibilità dei sei documenti prodotti.
+' L'originale contiene due flussi in uscita dalla barra F1 che arrivano
+' direttamente all'attivita Avvia la convivenza, senza join UML esplicito.
+' Qui si usa end merge (NON end fork) per non introdurre sincronizzazione.
+' Anche i due questionari finali convergono senza join esplicito nel draw.io.
+' La sottattività interna Ricerca match ha un proprio nodo iniziale/finale:
+' il suo dettaglio segue in un secondo diagramma PlantUML nello stesso file.
+title I-Need - Activity Diagram del sistema attuale
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #FFFFFF
+  BorderColor #3E4D5D
+  DiamondBackgroundColor #FFFFCC
+}
+|Host|
+start
+fork
+  :Compila modulo cartaceo
+di adesione al programma;
+  note right
+    Output: Modulo adesione Host [compilato]
+  end note
+  :Compila modulo cartaceo
+di registrazione abitazione;
+  note right
+    Output: Modulo abitazione [compilato]
+  end note
+  :Compila questionario
+cartaceo di preferenze;
+  note right
+    Output: Questionario preferenze Host [compilato]
+  end note
+fork again
+  |Guest|
+  :Compila modulo cartaceo
+di adesione al programma;
+  note left
+    Output: Modulo adesione Guest [compilato]
+  end note
+  :Compila questionario
+cartaceo di preferenze;
+  note left
+    Output: Questionario preferenze Guest [compilato]
+  end note
+  :Compila modulo di richiesta di
+abitazione per un periodo;
+  note left
+    Output: Richiesta di abitazione [compilata]
+  end note
+end fork
+|Operatore|
+:Riceve documentazione e
+richiesta di abitazione;
+note right
+  Input documentali dal diagramma draw.io:
+  - Modulo adesione Host [compilato]
+  - Modulo abitazione [compilato]
+  - Questionario preferenze Host [compilato]
+  - Modulo adesione Guest [compilato]
+  - Questionario preferenze Guest [compilato]
+  - Richiesta di abitazione [compilata]
+  I collegamenti tratteggiati indicano flussi di documenti.
+end note
+:Ricerca match di compatibilità;
+note right
+  Sottattività con nodo iniziale e finale propri.
+  Il ramo [sì] termina la ricerca, non il processo
+  generale. Vedere il secondo diagramma nello stesso file.
+end note
+:Propone la convivenza a Host e Guest;
+fork
+  |Host|
+  :Riceve proposta di convivenza;
+fork again
+  |Guest|
+  :Riceve proposta di convivenza;
+end merge
+|Operatore|
+:Avvia la convivenza;
+note right
+  Nel draw.io confluiscono qui i due rami di ricezione
+  direttamente, senza barra di sincronizzazione esplicita.
+end note
+fork
+  |Host|
+  :Compila questionari di
+gradimento della convivenza;
+  note right
+    Output: Questionario gradimento Host [compilato]
+  end note
+fork again
+  |Guest|
+  :Compila questionari di
+gradimento della convivenza;
+  note left
+    Output: Questionario gradimento Guest [compilato]
+  end note
+end merge
+|Operatore|
+:Analizza i questionari di
+gradimento di Host e Guest;
+note right
+  Input: Questionario gradimento Host [compilato]
+  Input: Questionario gradimento Guest [compilato]
+  Entrambi i flussi documentali arrivano all'azione.
+end note
+stop
+@enduml
+
+@startuml AD_RicercaMatchCompatibilita
+' Dettaglio della sottattivita che nel draw.io originale e disegnata
+' nel contenitore blu con un proprio punto iniziale e nodo finale.
+title I-Need - Ricerca match di compatibilità (dettaglio)
+skinparam shadowing false
+|Operatore|
+start
+repeat
+  :Analizza host disponibile;
+  :Confronta caratteristiche ed
+esigenze di Host e Guest;
+repeat while (Match trovato?) is (no) not (sì)
+stop
+@enduml

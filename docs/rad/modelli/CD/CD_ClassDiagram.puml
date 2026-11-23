@@ -1,0 +1,101 @@
+@startuml CD_ClassDiagram
+title I-Need - Class Diagram (trascrizione fedele)
+skinparam classAttributeIconSize 0
+hide empty members
+left to right direction
+
+class UtenteRegistrato <<entity>> {
+  - idUtente: String
+  - nome: String
+  - cognome: String
+  - email: String
+  - dataNascita: Data
+}
+
+class Operator <<entity>> {
+}
+
+class Convivente <<entity>> {
+}
+
+class Host <<entity>> {
+}
+
+class Guest <<entity>> {
+}
+
+class QuestionarioPreferenze <<entity>> {
+}
+
+class Domanda <<entity>> {
+  - idDomanda: String
+  - testo: String
+}
+
+class Risposta <<entity>> {
+  - valore: String
+}
+
+class Alloggio <<entity>> {
+  - codice: String
+  - indirizzo: String
+  - tipologia: String
+  - dataInizioDisponibilita: Data
+  - dataFineDisponibilita: Data
+  - stato: StatoAlloggio
+  + coprePeriodo(inizio: Data, fine: Data): Boolean
+}
+
+class PropostaAbbinamento <<entity>> {
+  - codice: String
+  - stato: StatoProposta
+  - esitoHost: EsitoRisposta
+  - esitoGuest: EsitoRisposta
+  + accetta(c: Convivente)
+  + rifiuta(c: Convivente)
+  + accettataDaEntrambi(): Boolean
+}
+
+class RichiestaAbitativa <<entity>> {
+  - codice: String
+  - dataInizioPermanenza: Data
+  - dataFinePermanenza: Data
+  - stato: StatoRichiesta
+  + segnaAbbinata()
+  + segnaAnnullata()
+}
+
+class Convivenza <<entity>> {
+  - codice: String
+  - dataInizio: Data
+  - dataFinePrevista: Data
+  - stato: StatoConvivenza
+}
+
+class AreaGeografica <<entity>> {
+  - citta: String
+  - zona: String
+  + corrisponde(a: AreaGeografica): Boolean
+}
+
+Operator --|> UtenteRegistrato
+Convivente --|> UtenteRegistrato
+Host --|> Convivente
+Guest --|> Convivente
+
+QuestionarioPreferenze "1" *-- "1..*" Domanda : contiene
+Convivente "1" -- "0..*" Risposta : fornisce
+Domanda "1" -- "0..*" Risposta : riceve
+Host "1" -- "0..1" Alloggio : registra
+Guest "1" -- "0..*" RichiestaAbitativa : presenta
+Operator "1" -- "0..*" PropostaAbbinamento : formula
+Host "1" -- "0..*" PropostaAbbinamento : riceve
+PropostaAbbinamento "0..*" -- "1" RichiestaAbitativa : riguarda
+PropostaAbbinamento "1" -- "0..1" Convivenza : genera
+Host "1" -- "0..*" Convivenza : ospita
+Guest "1" -- "0..*" Convivenza : partecipa
+Alloggio "1" -- "0..*" Convivenza : sede di
+Alloggio "0..*" -- "1" AreaGeografica : si trova in
+RichiestaAbitativa "0..*" -- "1" AreaGeografica : richiede
+
+@enduml

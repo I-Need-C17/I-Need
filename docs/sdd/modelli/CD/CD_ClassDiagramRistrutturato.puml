@@ -1,0 +1,137 @@
+@startuml C17_SDD_CD_ClassDiagramRistrutturato
+' Trascrizione semantica del modello C17_ClassDiagram_Ristrutturato_SDD.drawio
+' La molteplicità e le etichette dei ruoli riproducono gli edgeLabel originali.
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+hide circle
+
+class UtenteRegistrato <<entity>> {
+  - idUtente: String
+  - nome: String
+  - cognome: String
+  - email: String
+  - password: String
+  - dataNascita: Data
+  - ruolo: Ruolo
+  + getRuolo(): Ruolo
+  + setRuolo(ruolo: Ruolo): void
+  + getAlloggio(): Alloggio
+  + getRisposte(): List<Risposta>
+  + getDettagliGenerali(): (profilo, preferenze)
+  + verificaAssenzaImpegni(dataInizio: Data, dataFine: Data): Boolean
+}
+
+class QuestionarioPreferenze <<entity>> {
+  + getDomande(): List<Domanda>
+}
+
+class Domanda <<entity>> {
+  - idDomanda: String
+  - testo: String
+  - opzioni: String  {JSONB}
+}
+
+class Risposta <<entity>> {
+  - idRisposta: String
+  - valore: String
+}
+
+class Alloggio <<entity>> {
+  - codice: String
+  - indirizzo: String
+  - tipologia: String
+  - dataInizioDisponibilita: Data
+  - dataFineDisponibilita: Data
+  - stato: StatoAlloggio
+  + getAreaGeografica(): AreaGeografica
+  + coprePeriodo(inizio: Data, fine: Data): Boolean
+}
+
+class PropostaAbbinamento <<entity>> {
+  - codice: String
+  - stato: StatoProposta
+  - esitoHost: EsitoRisposta
+  - esitoGuest: EsitoRisposta
+  + PropostaAbbinamento(host: UtenteRegistrato, richiesta: RichiestaAbitativa, operator: UtenteRegistrato)
+  + accetta(c: UtenteRegistrato): void
+  + rifiuta(c: UtenteRegistrato): void
+  + accettataDaEntrambi(): Boolean
+  + getRichiesta(): RichiestaAbitativa
+}
+
+class RichiestaAbitativa <<entity>> {
+  - codice: String
+  - dataInizioPermanenza: Data
+  - dataFinePermanenza: Data
+  - stato: StatoRichiesta
+  + RichiestaAbitativa(guest: UtenteRegistrato, area: AreaGeografica, dataInizio: Data, dataFine: Data)
+  + getDatiRichiesta(): (dataInizio, dataFine)
+  + getAreaGeografica(): AreaGeografica
+  + getGuest(): UtenteRegistrato
+  + segnaAbbinata(): void
+  + segnaAnnullata(): void
+}
+
+class Convivenza <<entity>> {
+  - codice: String
+  - dataInizio: Data
+  - dataFinePrevista: Data
+  - stato: StatoConvivenza
+  + Convivenza(p: PropostaAbbinamento, stato: StatoConvivenza)
+}
+
+class AreaGeografica <<entity>> {
+  - citta: String
+  - zona: String
+  + corrisponde(a: AreaGeografica): Boolean
+}
+
+enum Ruolo {
+  HOST
+  GUEST
+  OPERATOR
+}
+
+enum StatoRichiesta {
+  ATTIVA
+  ABBINATA
+  ANNULLATA
+}
+
+enum StatoProposta {
+  IN_ATTESA_RISPOSTA
+  ACCETTATA
+  RIFIUTATA
+}
+
+enum EsitoRisposta {
+  IN_ATTESA
+  ACCETTATA
+  RIFIUTATA
+}
+
+enum StatoConvivenza {
+  ATTIVA
+  CONCLUSA
+}
+
+enum StatoAlloggio {
+  DISPONIBILE
+}
+
+UtenteRegistrato "1  host" -- "0..1" Alloggio : registra
+UtenteRegistrato "1  operator" -- "0..*" PropostaAbbinamento : formula
+UtenteRegistrato "1  host" -- "0..*" PropostaAbbinamento : riceve
+UtenteRegistrato "1  host" -- "0..*" Convivenza : ospita
+UtenteRegistrato "1  guest" -- "0..*" Convivenza : partecipa
+UtenteRegistrato "1  guest" -- "0..*" RichiestaAbitativa : presenta
+UtenteRegistrato "1  convivente" -- "0..*" Risposta : fornisce
+PropostaAbbinamento "0..*" -- "1" RichiestaAbitativa : riguarda
+PropostaAbbinamento "1" -- "0..1" Convivenza : genera
+Alloggio "1" -- "0..*" Convivenza : sede di
+Alloggio "0..*" -- "1" AreaGeografica : si trova in
+RichiestaAbitativa "0..*" -- "1" AreaGeografica : richiede
+QuestionarioPreferenze "1" *-- "1..*" Domanda : contiene
+Domanda "1" -- "0..*" Risposta : riceve
+
+@enduml
