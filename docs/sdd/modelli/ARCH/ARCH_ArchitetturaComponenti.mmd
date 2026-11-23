@@ -1,0 +1,168 @@
+%%{init: {"theme":"base","themeVariables":{"primaryColor":"#ffffff","primaryBorderColor":"#000000","primaryTextColor":"#000000","lineColor":"#000000","clusterBkg":"#ffffff","clusterBorder":"#000000","edgeLabelBackground":"#ffffff","fontFamily":"Arial"}, "flowchart":{"curve":"linear"}}}%%
+flowchart TB
+    subgraph CL["Client Layer — SPA React + Bootstrap (GUI / Boundary)"]
+        direction LR
+        subgraph GUI_GR["GUI Gestione richieste abitative"]
+            direction LR
+            RichiesteAbitativeView
+            RichiestaAbitativaForm
+            RichiesteAbitativeView
+        end
+        subgraph GUI_GA["GUI Gestione abitazione"]
+            direction LR
+            AbitazioneView
+            AlloggioForm
+        end
+        subgraph GUI_GP["GUI Gestione proposte"]
+            direction LR
+            ProposteAbbinamentoView
+            DettaglioPropostaView
+            ConfermaRifiutoDialog
+        end
+        subgraph GUI_GM["GUI Gestione matching"]
+            direction LR
+            GraduatoriaHostView
+            DettaglioHostView
+            ElencoRichiesteAbitativeView
+        end
+        subgraph GUI_GC["GUI Gestione convivenza"]
+            direction LR
+            ConvivenzeView
+            DettaglioConvivenzaView
+        end
+        LoginView
+    end
+
+    subgraph BL["Business Layer — Spring Boot"]
+        direction TB
+        subgraph CTRL["Control — @RestController (API REST: HTTPS / JSON + JWT)"]
+            direction LR
+
+                C_RIC["<div style='width:300px'>PresentazioneRichiestaAbitativaControl</div>"]
+
+
+                C_ALL["<div style='width:300px'>RegistrazioneAlloggioControl</div>"]
+
+
+                direction LR
+                C_RIS["<div style='width:300px'>RispostaPropostaAbbinamentoControl</div>"]
+                C_AVV["<div style='width:300px'>AvvioPropostaAbbinamentoControl</div>"]
+
+
+                C_CON["<div style='width:300px'>ConsultazioneStatoConvivenzeControl</div>"]
+
+            C_AUT["<div style='width:300px'>AutenticazioneControl</div>"]
+        end
+        subgraph SRV["Service — @Service, @Transactional"]
+            direction LR
+
+                S_RIC["<div style='width:300px'>RichiestaAbitativaService</div>"]
+
+
+                S_ALL["<div style='width:300px'>AlloggioService</div>"]
+
+                S_PROP["<div style='width:300px'>PropostaAbbinamentoService</div>"]
+
+                S_MAT["<div style='width:300px'>MatchingService</div>"]
+
+                S_CON["<div style='width:300px'>ConvivenzaService</div>"]
+
+            S_AUT["<div style='width:300px'>AutenticazioneService</div>"]
+        end
+    end
+
+    subgraph AI["Modulo AI — microservizio Python / FastAPI"]
+        AIService["Calcolo compatibilità<br/>(FastAPI + Pydantic,<br/>scikit-learn, sentence-transformers)"]
+    end
+
+    subgraph DL["Data Layer"]
+        direction TB
+        subgraph REPO["Repository — Spring Data JPA"]
+            direction LR
+            R_HOST["<div style='width:255px'>HostRepository</div>"]
+            R_GUEST["<div style='width:255px'>GuestRepository</div>"]
+            R_OP["<div style='width:255px'>OperatorRepository</div>"]
+            R_ALL["<div style='width:255px'>AlloggioRepository</div>"]
+            R_AREA["<div style='width:255px'>AreaGeograficaRepository</div>"]
+            R_RIC["<div style='width:255px'>RichiestaAbitativaRepository</div>"]
+            R_QUE["<div style='width:255px'>QuestionarioPreferenzeRepository</div>"]
+            R_DOM["<div style='width:255px'>DomandaRepository</div>"]
+            R_RISP["<div style='width:255px'>RispostaRepository</div>"]
+            R_PROP["<div style='width:255px'>PropostaAbbinamentoRepository</div>"]
+            R_CONV["<div style='width:255px'>ConvivenzaRepository</div>"]
+            R_UR["<div style='width:255px'>UtenteRegistratoRepository</div>"]
+        end
+        subgraph ENT["Entity — @Entity JPA / Hibernate"]
+            direction LR
+            E_UR["<div style='width:255px'>UtenteRegistrato</div>"]
+            E_ALL["<div style='width:255px'>Alloggio</div>"]
+            E_AREA["<div style='width:255px'>AreaGeografica</div>"]
+            E_RIC["<div style='width:255px'>RichiestaAbitativa</div>"]
+            E_QUE["<div style='width:255px'>QuestionarioPreferenze</div>"]
+            E_DOM["<div style='width:255px'>Domanda</div>"]
+            E_RISP["<div style='width:255px'>Risposta</div>"]
+            E_PROP["<div style='width:255px'>PropostaAbbinamento</div>"]
+            E_CONV["<div style='width:255px'>Convivenza</div>"]
+        end
+
+    end
+    DB[("PostgreSQL")]
+
+
+    %% View → Control
+    RichiesteAbitativeView --> C_RIC
+    RichiestaAbitativaForm --> C_RIC
+    ElencoRichiesteAbitativeView --> C_AVV
+    AbitazioneView --> C_ALL
+    AlloggioForm --> C_ALL
+    GraduatoriaHostView --> C_AVV
+    DettaglioHostView --> C_AVV
+    ProposteAbbinamentoView --> C_RIS
+    DettaglioPropostaView --> C_RIS
+    ConfermaRifiutoDialog --> C_RIS
+    ConvivenzeView --> C_CON
+    DettaglioConvivenzaView --> C_CON
+    LoginView --> C_AUT
+
+    %% Control → Service
+    C_RIC --> S_RIC
+    C_ALL --> S_ALL
+    C_RIS --> S_PROP
+    C_AVV --> S_PROP
+    C_AVV --> S_MAT
+    C_CON --> S_CON
+
+    %% Repository → Entity (1:1)
+    R_HOST --> E_UR
+    R_GUEST --> E_UR
+    R_OP --> E_UR
+    R_ALL --> E_ALL
+    R_AREA --> E_AREA
+    R_RIC --> E_RIC
+    R_QUE --> E_QUE
+    R_DOM --> E_DOM
+    R_RISP --> E_RISP
+    R_PROP --> E_PROP
+    R_CONV --> E_CONV
+
+    %% Dipendenze tra layer
+    CTRL --> S_AUT
+    SRV -->|HTTP POST / JSON| AI
+    SRV -->|usa| DL
+    ENT -->|mapping ORM / JDBC| DB
+
+    classDef default fill:#ffffff,stroke:#000000,color:#000000
+    style CL fill:#ffffff,stroke:#000000,color:#000000
+    style GUI_GR fill:#ffffff,stroke:#000000,color:#000000
+    style GUI_GA fill:#ffffff,stroke:#000000,color:#000000
+    style GUI_GM fill:#ffffff,stroke:#000000,color:#000000
+    style GUI_GP fill:#ffffff,stroke:#000000,color:#000000
+    style GUI_GC fill:#ffffff,stroke:#000000,color:#000000
+    style BL fill:#ffffff,stroke:#000000,color:#000000
+    style CTRL fill:#ffffff,stroke:#000000,color:#000000
+    style SRV fill:#ffffff,stroke:#000000,color:#000000
+    style AI fill:#ffffff,stroke:#000000,color:#000000
+    style DL fill:#ffffff,stroke:#000000,color:#000000
+    style REPO fill:#ffffff,stroke:#000000,color:#000000
+    style ENT fill:#ffffff,stroke:#000000,color:#000000
+    linkStyle default stroke:#000000

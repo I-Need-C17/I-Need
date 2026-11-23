@@ -1,0 +1,123 @@
+@startuml
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundCorner 0
+skinparam defaultFontName "Arial"
+skinparam defaultFontSize 11
+skinparam nodesep 45
+skinparam ranksep 45
+
+skinparam node {
+  BackgroundColor White
+  BorderColor Black
+  BorderThickness 1.2
+}
+skinparam component {
+  BackgroundColor #F8F9FA
+  BorderColor Black
+}
+skinparam artifact {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam note {
+  BackgroundColor #FFFDF0
+  BorderColor #666666
+}
+
+' =====================================================================
+' NODO 1: DISPOSITIVO CLIENT UTENTE
+' =====================================================================
+node "«device»\n<u>:UserClient</u>\n{type = PC, Tablet, Smartphone}" as ClientDevice {
+
+  node "«executionEnvironment»\n<u>:ClientOS</u>\n{os = Windows, macOS, Linux, Android, iOS}" as ClientOS {
+
+    node "«executionEnvironment»\n<u>:WebBrowser</u>\n{standards = HTML5, CSS3, JavaScript ES6+}" as Browser {
+
+      artifact "«artifact»\nineed-spa-runtime.js\n{framework = React, Bootstrap}" as SPARuntime {
+        component "Client GUI (Boundary Layer)\n[Views & Forms dei Sottosistemi]" as ClientGUI
+      }
+
+    }
+  }
+}
+
+' =====================================================================
+' NODO 2: SERVER CLOUD VPS
+' =====================================================================
+node "«device»\n<u>:VPSCloudServer</u>\n{vCPU >= 2, RAM >= 4 GB}" as VPSServer {
+
+  node "«executionEnvironment»\n<u>:LinuxOS</u>" as LinuxOS {
+
+    ' --- Ambiente Docker Compose (4 Container su ineed-network) ---
+    node "«executionEnvironment»\n<u>:DockerEngine</u>\n{orchestrator = Docker Compose,\nnetwork = ineed-network (bridge)}" as DockerEngine {
+
+      ' 1. Container Frontend & Reverse Proxy HTTPS (:443)
+      node "«executionEnvironment»\n<u>frontend-web : NginxContainer</u>\n{image = nginx:alpine,\nrole = Web Server & Reverse Proxy,\nport = 443 (esposta)}" as NginxContainer {
+
+        artifact "«artifact»\nineed-spa-build\n{static = index.html, bundle.js, styles.css}" as SPABuild
+        artifact "«artifact»\nnginx.conf\n{tls = HTTPS/SSL, proxy_pass = /api/v1/*}" as NginxConf
+      }
+
+      ' 2. Container Backend Spring Boot (:8080)
+      node "«executionEnvironment»\n<u>backend-api : SpringBootContainer</u>\n{image = eclipse-temurin:17-jre-alpine,\nruntime = Spring Boot 3 (Java 17+ / Jakarta EE 10),\nport = 8080 (interna)}" as SpringContainer {
+
+        artifact "«artifact»\nineed-backend.jar\n{security = Spring Security (JWT),\norm = Spring Data JPA (Hibernate)}" as BackendJar {
+          component "Autenticazione" as CompAuth
+          component "Gestione Richieste Abitative" as CompGR
+          component "Gestione Abitazione" as CompGA
+          component "Gestione Matching" as CompGM
+          component "Gestione Proposte" as CompGP
+          component "Gestione Convivenza" as CompGC
+          component "Interfacciamento Dati Persistenti" as CompPersistence
+        }
+      }
+
+      ' 3. Container Microservizio AI FastAPI (:8000)
+      node "«executionEnvironment»\n<u>ai-service : FastAPIContainer</u>\n{image = python:3.11-slim,\nruntime = FastAPI (ASGI / Python 3.11+),\nport = 8000 (interna), RAM >= 2 GB}" as AIContainer {
+
+        artifact "«artifact»\nai-service.py\n{libs = Pydantic, scikit-learn,\nsentence-transformers}" as AIScript {
+          component "Modulo AI" as CompAI
+        }
+
+        artifact "«artifact»\nhf_model_cache (Docker Volume)\n{env = HF_HOME, size = ~470 MB,\nmodel = paraphrase-multilingual-MiniLM-L12-v2}" as HFVolume
+
+        AIScript ..> HFVolume : «use»
+      }
+
+      ' 4. Container Database PostgreSQL (:5432)
+      node "«executionEnvironment»\n<u>db : PostgreSQLContainer</u>\n{image = postgres:15-alpine,\nruntime = PostgreSQL 15,\nport = 5432 (interna)}" as DBContainer {
+
+        artifact "«artifact»\npostgres_data (Docker Volume)\n{schema = ineed_db, properties = ACID, JSONB}" as PGVolume {
+          component "Storage" as CompStorage
+        }
+      }
+
+    }
+  }
+}
+
+' =====================================================================
+' COMMUNICATION PATHS (UML 2.5 Standard - Linee continue tra Nodi)
+' =====================================================================
+Browser " * " -- " 1 " NginxContainer : "«HTTPS»\nDownload SPA & Chiamate REST\n(JSON + JWT) [:443]"
+NginxContainer " 1 " -- " 1 " SpringContainer : "«HTTP»\nReverse Proxy REST API\n(ineed-network) [:8080]"
+SpringContainer " 1 " -- " 1 " AIContainer : "«HTTP POST»\nREST Payload JSON\n(ineed-network) [:8000]"
+SpringContainer " 1 " -- " 1 " DBContainer : "«TCP/IP»\nDriver JDBC\n(ineed-network) [:5432]"
+
+' =====================================================================
+' NOTA ARCHITETTURALE ANCORATA
+' =====================================================================
+note as SecurityNote
+  <b>Isolamento Rete Bridge (ineed-network):</b>
+  Solo il container <i>frontend-web</i> espone la porta :443 all'esterno.
+  I container <i>backend-api</i> (:8080), <i>ai-service</i> (:8000) e <i>db</i> (:5432)
+  sono isolati sulla rete interna Docker. Il Modulo AI non accede
+  al Database: riceve i dati da Spring Boot in formato JSON.
+end note
+
+SecurityNote .. SpringContainer
+SecurityNote .. AIContainer
+SecurityNote .. DBContainer
+
+@enduml

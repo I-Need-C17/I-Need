@@ -1,16 +1,15 @@
-@startuml I-Need_UCD_GestioneMatchingEProposte
+@startuml I-Need_UCD_GestioneConvivenzaEFeedback
 
 ' ============================================================
 '  I-Need - Use Case Diagram del package
-'  GestioneMatchingEProposte (RF_GM)
+'  GestioneConvivenzaEFeedback (RF_GC)
 '  Notazione Bruegge & Dutoit: monocromatico, attori stick-figure,
 '  use case come ellissi, associazioni come linee semplici,
 '  <<include>> (freccia tratteggiata) dallo use case che include
 '  verso lo use case incluso.
 '  Il Login non e' modellato come <<include>>: l'autenticazione
-'  e' parte della entry condition (vedi UC_GM_1 e UC_GM_2 nel RAD).
-'  Il package GestioneRichiesteAbitative e' riportato solo con lo
-'  use case da cui parte il matching.
+'  e' parte della entry condition (vedi UC_GC_1 nel RAD).
+'  Nomi allineati a UC_GC_1 "Consultazione stato convivenze".
 ' ============================================================
 
 left to right direction
@@ -35,32 +34,35 @@ skinparam package {
 actor Convivente
 actor Operator
 
-package GestioneMatchingEProposte {
-  ' RF_GM_1, RF_GM_2
-  usecase "VisualizzazioneHostIdonei"     as UC_HostIdonei
-  ' RF_GM_3
-  usecase "AvvioPropostaAbbinamento"      as UC_Invio
-   usecase "AnnullamentoPropostaAbbinamento"      as UC_Ann
-  ' RF_GM_10
-  usecase "ConsultazioneStatoProposte" as UC_ElencoProp
-  ' RF_GM_4, RF_GM_5
-  usecase "ConsultazioneProposteRicevute" as UC_ConsProp
-  ' RF_GM_6, RF_GM_7, RF_GM_8, RF_GM_9 (UC_GM_2)
-  usecase "RispostaPropostaAbbinamento"   as UC_Risposta
-  ' RF_GM_11, RF_GM_12
-  usecase "ConsultazioneProfiloAbbinato"  as UC_ProfAbb
 
+
+package GestioneConvivenzaEFeedback {
+  ' RF_GC_1, RF_GC_2
+  usecase "ConsultazioneProprieConvivenze"       as UC_ConsProprie
+
+  ' RF_GC_4, RF_GC_5
+  usecase "RichiestaInterruzioneConvivenza"      as UC_RichInterr
+  ' RF_GC_8, RF_GC_9
+  usecase "CompilazioneQuestionarioGradimento"   as UC_CompGrad
+  ' RF_GC_3 (UC_GC_1)
+  usecase "ConsultazioneStatoConvivenze"         as UC_ConsStato
+  ' RF_GC_6
+  usecase "VisualizzazioneRichiesteInterruzione" as UC_VisInterr
+  ' RF_GC_7
+  usecase "RegistrazioneChiusuraAnticipata"      as UC_Chiusura
+  ' RF_GC_10
+  usecase "ConsultazioneQuestionariGradimento"   as UC_ConsGrad
 }
 
 ' ---------------- Associazioni attori ----------------
-Convivente -- UC_ConsProp
-Convivente -- UC_Risposta
-Convivente -- UC_ProfAbb
+Convivente -- UC_ConsProprie
+Convivente -- UC_RichInterr
+Convivente -- UC_CompGrad
 
-UC_HostIdonei -- Operator
-UC_Invio      -- Operator
-UC_ElencoProp -- Operator
-UC_Ann -- Operator
+UC_ConsStato -- Operator
+UC_VisInterr -- Operator
+UC_Chiusura  -- Operator
+UC_ConsGrad  -- Operator
 
 
 @enduml

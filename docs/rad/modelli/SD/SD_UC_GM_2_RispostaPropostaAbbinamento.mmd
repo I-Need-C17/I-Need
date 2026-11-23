@@ -73,7 +73,7 @@ sequenceDiagram
                 alt completa = true (seconda accettazione)
                     RPC->>+PA: r = getRichiesta()
                     PA-->>-RPC: r
-                    RPC->>RA: setStato(Abbinata)
+                    RPC->>RA: segnaAbbinata()
                     create participant CZ as «entity»<br/>cz: Convivenza
                     RPC-->>CZ: «create»(p, stato = Attiva)
                 else completa = false (prima accettazione, 7.a)

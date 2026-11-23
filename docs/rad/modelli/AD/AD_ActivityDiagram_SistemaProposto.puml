@@ -1,0 +1,89 @@
+@startuml AD_Sistema_Proposto_I-Need
+title AD_1: Coabitazione solidale - Sistema Proposto I-Need
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ActivityBackgroundColor #FFFFFF
+skinparam ActivityBorderColor #000000
+skinparam ActivityDiamondBackgroundColor #FFFF99
+skinparam ActivityDiamondBorderColor #000000
+skinparam ArrowColor #000000
+skinparam SwimlaneBorderColor #000000
+skinparam SwimlaneTitleFontStyle bold
+skinparam NoteBackgroundColor #D9E8FB
+skinparam NoteBorderColor #6C8EBF
+
+|Host|
+|Operator|
+|Guest|
+
+|Host|
+start
+
+fork
+  |Host|
+  :Si registra come Host;
+  :Compila il questionario\ndelle preferenze Host;
+  :Inserisce i dati dell'abitazione\ne il periodo di disponibilita;
+fork again
+  |Guest|
+  :Si registra come Guest;
+  :Compila il questionario\ndelle preferenze Guest;
+  :Crea la richiesta abitativa\n(area geografica e periodo);
+end fork
+
+|Operator|
+:Consulta la richiesta abitativa attiva;
+
+repeat
+  :Visualizza gli Host Idonei con\nil punteggio di compatibilita;
+  :Consulta profilo, questionario e\nabitazione dell'Host selezionato;
+  :Invia la proposta di abbinamento\na Host e Guest;
+
+  fork
+    |Host|
+    :Consulta la proposta ricevuta;
+    if (Accetta la proposta?) then (si)
+      :Accetta la proposta;
+    else (no)
+      :Rifiuta la proposta;
+    endif
+  fork again
+    |Guest|
+    :Consulta la proposta ricevuta;
+    if (Accetta la proposta?) then (si)
+      :Accetta la proposta;
+    else (no)
+      :Rifiuta la proposta;
+    endif
+  end fork
+
+  |Operator|
+  :Consulta lo stato della proposta;
+repeat while (Proposta accettata\nda entrambe le parti?) is (no) not (si)
+
+:Avvia la convivenza;
+
+if (Richiesta di interruzione\nanticipata?) then (si)
+  |Host|
+  :Host o Guest richiede\nl'interruzione anticipata;
+  |Operator|
+  :Visualizza la richiesta di interruzione;
+  :Registra la chiusura anticipata\ndella convivenza;
+else (no)
+  :Convivenza giunta a termine;
+endif
+
+fork
+  |Host|
+  :Compila il questionario\ndi gradimento Host;
+fork again
+  |Guest|
+  :Compila il questionario\ndi gradimento Guest;
+end fork
+
+|Operator|
+:Consulta i questionari di gradimento\ndi Host e Guest;
+
+stop
+@enduml
