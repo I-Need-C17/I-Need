@@ -37,36 +37,36 @@ flowchart TB
         direction TB
         subgraph CTRL["Control — @RestController (API REST: HTTPS / JSON + JWT)"]
             direction LR
-            
+
                 C_RIC["<div style='width:300px'>PresentazioneRichiestaAbitativaControl</div>"]
-            
-            
+
+
                 C_ALL["<div style='width:300px'>RegistrazioneAlloggioControl</div>"]
-            
-            
+
+
                 direction LR
                 C_RIS["<div style='width:300px'>RispostaPropostaAbbinamentoControl</div>"]
                 C_AVV["<div style='width:300px'>AvvioPropostaAbbinamentoControl</div>"]
-            
-            
+
+
                 C_CON["<div style='width:300px'>ConsultazioneStatoConvivenzeControl</div>"]
-            
+
             C_AUT["<div style='width:300px'>AutenticazioneControl</div>"]
         end
         subgraph SRV["Service — @Service, @Transactional"]
             direction LR
-            
+
                 S_RIC["<div style='width:300px'>RichiestaAbitativaService</div>"]
-            
-            
+
+
                 S_ALL["<div style='width:300px'>AlloggioService</div>"]
-            
+
                 S_PROP["<div style='width:300px'>PropostaAbbinamentoService</div>"]
-            
+
                 S_MAT["<div style='width:300px'>MatchingService</div>"]
-            
+
                 S_CON["<div style='width:300px'>ConvivenzaService</div>"]
-            
+
             S_AUT["<div style='width:300px'>AutenticazioneService</div>"]
         end
     end
@@ -104,7 +104,7 @@ flowchart TB
             E_PROP["<div style='width:255px'>PropostaAbbinamento</div>"]
             E_CONV["<div style='width:255px'>Convivenza</div>"]
         end
-        
+
     end
     DB[("PostgreSQL")]
 
