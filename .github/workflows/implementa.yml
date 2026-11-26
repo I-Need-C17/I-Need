@@ -266,9 +266,6 @@ jobs:
               [/ho (?:modificato|creato|aggiornato|scritto)|(?:created|modified|updated|wrote)\b/i, 'possibile modifica dichiarata'],
             ].filter(([pattern]) => pattern.test(outcome)).map(([, label]) => label);
             core.info(`Report Copilot | ${Buffer.byteLength(outcome)} byte | ${signals.join(', ') || 'nessun indicatore riconosciuto'}`);
-      - name: Compila e verifica prima della Draft PR
-        if: steps.controllo.outputs.esegui == 'true'
-        uses: ./.github/actions/verifiche-app
       - name: Crea il commit, pubblica il branch e apri la Draft PR
         if: steps.controllo.outputs.esegui == 'true'
         env:
