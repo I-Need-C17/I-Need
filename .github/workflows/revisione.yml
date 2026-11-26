@@ -1,9 +1,16 @@
 name: Revisore
 
 on:
-  pull_request_target:
-    branches: [main]
-    types: [ready_for_review]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request verificata dal Tester
+        required: true
+        type: string
+      expected_sha:
+        description: Commit verificato dal Tester
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -11,38 +18,50 @@ permissions:
   issues: read
 
 concurrency:
-  group: revisione-${{ github.event.pull_request.number }}
+  group: revisione-${{ inputs.pr_number }}
   cancel-in-progress: false
 
 jobs:
   revisione:
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-24.04
     environment: copilot-student
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Verifica richiesta, deduplicazione e dimensione del diff
         id: guard
         uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
-            const pr=context.payload.pull_request;
-            const {data:perm}=await github.rest.repos.getCollaboratorPermissionLevel({
-              ...context.repo,username:context.actor
-            });
-            if (!['write','maintain','admin'].includes(perm.permission) || pr.draft) {
-              core.setFailed('Revisione consentita solo quando un membro autorizzato prepara la PR.'); return;
+            const prNumber=Number(context.payload.inputs?.pr_number);
+            const expectedSha=context.payload.inputs?.expected_sha;
+            if (!Number.isSafeInteger(prNumber) || prNumber < 1 || !/^[a-f0-9]{40}$/.test(expectedSha || '')) {
+              core.setFailed('Input PR o SHA non valido.'); return;
             }
+            const {data:pr}=await github.rest.pulls.get({...context.repo,pull_number:prNumber});
+            if (pr.state !== 'open' || !pr.draft || pr.head.sha !== expectedSha ||
+                pr.head.repo?.full_name !== context.repo.owner+'/'+context.repo.repo) {
+              core.setFailed('Serve la Draft PR interna sullo SHA verificato dal Tester.'); return;
+            }
+            const reports=await github.paginate(github.rest.issues.listComments,{
+              ...context.repo,issue_number:pr.number,per_page:100
+            });
+            const tester=reports.findLast(c=>c.user?.login==='github-actions[bot]' &&
+              c.created_at===c.updated_at && (
+                ((c.body||'').includes('Commit dopo il test: '+expectedSha) &&
+                 /^Risultato dei test automatici \(exit code\): 0$/m.test(c.body||'')) ||
+                (c.body||'').startsWith('## Tester indipendente — verifica documentale\n\nCommit esaminato: '+expectedSha+'\n')
+              ));
+            if (!tester) { core.setFailed('Manca il report positivo del Tester sullo SHA corrente.'); return; }
             const branch = /^agent\/issue-([1-9]\d*)-implementazione$/.exec(pr.head.ref);
             if (branch) {
               const path = require('node:path');
               const {approvedPlan} = require(path.join(process.env.GITHUB_WORKSPACE, '.github/scripts/piano.cjs'));
               const {selected, approval, tm, labels} = await approvedPlan(github, context.repo, Number(branch[1]));
-              if (context.payload.sender?.id !== tm.id || labels.includes('fase:piano') ||
+              if (labels.includes('fase:piano') ||
                   pr.user?.login !== 'github-actions[bot]' ||
                   !pr.body?.startsWith(`<!-- i-need:pr ${selected.id} ${approval.id} -->\nCloses #${branch[1]}\n`)) {
                 throw new Error('Serve il TM assegnato e la PR del piano approvato.');
@@ -80,7 +99,7 @@ jobs:
         if: ${{ steps.guard.outputs.already_present == 'false' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ inputs.pr_number }}
         run: |
           set -euo pipefail
           gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
@@ -122,7 +141,9 @@ jobs:
         with:
           script: |
             const fs=require('fs'),path=require('path');
-            const pr=context.payload.pull_request;
+            const prNumber=Number(context.payload.inputs.pr_number);
+            const expectedSha=context.payload.inputs.expected_sha;
+            const {data:pr}=await github.rest.pulls.get({...context.repo,pull_number:prNumber});
             const raw=fs.readFileSync(path.join(process.env.RUNNER_TEMP,'revisione-raw.md'),'utf8').trim();
             if (raw.length<250 || raw.length>16000 ||
                 !/(diff|file|modelli|test|rischi|requisiti)/i.test(raw)) {
@@ -134,8 +155,8 @@ jobs:
             const {data:latest}=await github.rest.pulls.get({
               ...context.repo,pull_number:pr.number
             });
-            if (latest.head.sha!==pr.head.sha || latest.draft) {
-              core.setFailed('PR cambiata o tornata Draft durante la revisione: ripetere il controllo.'); return;
+            if (latest.head.sha!==expectedSha || !latest.draft) {
+              core.setFailed('PR cambiata o non più Draft durante la revisione: ripetere il controllo.'); return;
             }
             const marker='## Revisione AI — PR #'+pr.number;
             const comments=await github.paginate(github.rest.issues.listComments,{
@@ -153,3 +174,8 @@ jobs:
               ...context.repo,issue_number:pr.number,body
             });
             core.notice('Pubblicato report AI, senza approvare o integrare la PR.');
+      - name: Porta la PR a Ready for review dopo il report tecnico
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+        run: gh pr ready "$PR_NUMBER" --repo "$GITHUB_REPOSITORY"
