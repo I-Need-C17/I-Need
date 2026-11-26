@@ -1,0 +1,77 @@
+@startuml
+title Sottosistema: Autenticazione
+skinparam classAttributeIconSize 0
+
+legend
+  Legenda
+  - - ->  tra service e repository/service: «use» (dipendenza iniettata)
+  - - ->  tra repository ed entity: «use» (JpaRepository<Entity, ID>)
+  ——  tra entity: associazione del CD ristrutturato (SDD 3.4.2)
+  Tipo Data come nel CD (in Java: LocalDate)
+endlegend
+
+class AutenticazioneService <<service>> {
+  - utenteRegistratoRepository: UtenteRegistratoRepository
+  - passwordEncoder: PasswordEncoder
+  --
+  + login(email: String, password: String): String
+  + logout(token: String): void
+  + generaToken(u: UtenteRegistrato): String
+  + validaToken(token: String): Boolean
+  + getUtenteAutenticato(token: String): UtenteRegistrato
+  + verificaRuolo(u: UtenteRegistrato, ruolo: Ruolo): Boolean
+}
+
+class UtenteRegistratoRepository <<repository>> {
+  + save(e: UtenteRegistrato): UtenteRegistrato
+  + findById(id: String): Optional<UtenteRegistrato>
+  + findByEmail(email: String): Optional<UtenteRegistrato>
+  + findByRuolo(ruolo: Ruolo): List<UtenteRegistrato>
+}
+
+class UtenteRegistrato <<entity>> {
+  - idUtente: String
+  - nome: String
+  - cognome: String
+  - email: String
+  - password: String
+  - dataNascita: Data
+  - ruolo: Ruolo
+  - alloggio: Alloggio
+  - risposte: List<Risposta>
+  --
+  + UtenteRegistrato()
+  + getIdUtente(): String
+  + setIdUtente(idUtente: String): void
+  + getNome(): String
+  + setNome(nome: String): void
+  + getCognome(): String
+  + setCognome(cognome: String): void
+  + getEmail(): String
+  + setEmail(email: String): void
+  + getPassword(): String
+  + setPassword(password: String): void
+  + getDataNascita(): Data
+  + setDataNascita(dataNascita: Data): void
+  + getRuolo(): Ruolo
+  + setRuolo(ruolo: Ruolo): void
+  + getAlloggio(): Alloggio
+  + setAlloggio(alloggio: Alloggio): void
+  + getRisposte(): List<Risposta>
+  + setRisposte(risposte: List<Risposta>): void
+}
+
+enum Ruolo {
+  HOST
+  GUEST
+  OPERATOR
+}
+
+note right of UtenteRegistratoRepository
+  extends JpaRepository<UtenteRegistrato, String>
+end note
+
+UtenteRegistratoRepository ..> UtenteRegistrato : <<use>>
+AutenticazioneService ..> UtenteRegistratoRepository : <<use>>
+
+@enduml

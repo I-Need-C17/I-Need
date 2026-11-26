@@ -1,0 +1,176 @@
+@startuml
+title Sottosistema: Gestione convivenza
+skinparam classAttributeIconSize 0
+
+legend
+  Legenda
+  - - ->  tra service e repository/service: «use» (dipendenza iniettata)
+  - - ->  tra repository ed entity: «use» (JpaRepository<Entity, ID>)
+  ——  tra entity: associazione del CD ristrutturato (SDD 3.4.2)
+  Tipo Data come nel CD (in Java: LocalDate)
+endlegend
+
+class ConvivenzaService <<service>> {
+  - utenteRegistratoRepository: UtenteRegistratoRepository
+  - alloggioRepository: AlloggioRepository
+  - convivenzaRepository: ConvivenzaRepository
+  --
+  + recuperaConvivenze(): List<Convivenza>
+  + verificaCriteri(stato: StatoConvivenza, inizioDa: Data, inizioA: Data, fineDa: Data, fineA: Data, idHost: String, idGuest: String): Boolean
+  + filtraConvivenze(stato: StatoConvivenza, inizioDa: Data, inizioA: Data, fineDa: Data, fineA: Data, idHost: String, idGuest: String): List<Convivenza>
+  + recuperaDettaglio(codice: String): Convivenza
+  + concludiConvivenza(cz: Convivenza): void
+}
+
+class AlloggioRepository <<repository>> {
+  + save(e: Alloggio): Alloggio
+  + findById(id: String): Optional<Alloggio>
+  + findByHost(host: UtenteRegistrato): Optional<Alloggio>
+}
+
+class Alloggio <<entity>> {
+  - codice: String
+  - indirizzo: String
+  - tipologia: String
+  - dataInizioDisponibilita: Data
+  - dataFineDisponibilita: Data
+  - stato: StatoAlloggio
+  - host: UtenteRegistrato
+  - areaGeografica: AreaGeografica
+  --
+  + Alloggio()
+  + getCodice(): String
+  + setCodice(codice: String): void
+  + getIndirizzo(): String
+  + setIndirizzo(indirizzo: String): void
+  + getTipologia(): String
+  + setTipologia(tipologia: String): void
+  + getDataInizioDisponibilita(): Data
+  + setDataInizioDisponibilita(dataInizioDisponibilita: Data): void
+  + getDataFineDisponibilita(): Data
+  + setDataFineDisponibilita(dataFineDisponibilita: Data): void
+  + getStato(): StatoAlloggio
+  + setStato(stato: StatoAlloggio): void
+  + getHost(): UtenteRegistrato
+  + setHost(host: UtenteRegistrato): void
+  + getAreaGeografica(): AreaGeografica
+  + setAreaGeografica(areaGeografica: AreaGeografica): void
+}
+
+class UtenteRegistratoRepository <<repository>> {
+  + save(e: UtenteRegistrato): UtenteRegistrato
+  + findById(id: String): Optional<UtenteRegistrato>
+  + findByEmail(email: String): Optional<UtenteRegistrato>
+  + findByRuolo(ruolo: Ruolo): List<UtenteRegistrato>
+}
+
+class UtenteRegistrato <<entity>> {
+  - idUtente: String
+  - nome: String
+  - cognome: String
+  - email: String
+  - password: String
+  - dataNascita: Data
+  - ruolo: Ruolo
+  - alloggio: Alloggio
+  - risposte: List<Risposta>
+  --
+  + UtenteRegistrato()
+  + getIdUtente(): String
+  + setIdUtente(idUtente: String): void
+  + getNome(): String
+  + setNome(nome: String): void
+  + getCognome(): String
+  + setCognome(cognome: String): void
+  + getEmail(): String
+  + setEmail(email: String): void
+  + getPassword(): String
+  + setPassword(password: String): void
+  + getDataNascita(): Data
+  + setDataNascita(dataNascita: Data): void
+  + getRuolo(): Ruolo
+  + setRuolo(ruolo: Ruolo): void
+  + getAlloggio(): Alloggio
+  + setAlloggio(alloggio: Alloggio): void
+  + getRisposte(): List<Risposta>
+  + setRisposte(risposte: List<Risposta>): void
+}
+
+class ConvivenzaRepository <<repository>> {
+  + save(e: Convivenza): Convivenza
+  + findById(id: String): Optional<Convivenza>
+  + findAll(): List<Convivenza>
+  + findByFiltri(stato: StatoConvivenza, inizioDa: Data, inizioA: Data, fineDa: Data, fineA: Data, idHost: String, idGuest: String): List<Convivenza>
+  + existsByHostAndStato(host: UtenteRegistrato, stato: StatoConvivenza): boolean
+  + existsByGuestAndStato(guest: UtenteRegistrato, stato: StatoConvivenza): boolean
+}
+
+class Convivenza <<entity>> {
+  - codice: String
+  - dataInizio: Data
+  - dataFinePrevista: Data
+  - stato: StatoConvivenza
+  - proposta: PropostaAbbinamento
+  - host: UtenteRegistrato
+  - guest: UtenteRegistrato
+  - alloggio: Alloggio
+  --
+  + Convivenza()
+  + Convivenza(p: PropostaAbbinamento, stato: StatoConvivenza)
+  + getCodice(): String
+  + setCodice(codice: String): void
+  + getDataInizio(): Data
+  + setDataInizio(dataInizio: Data): void
+  + getDataFinePrevista(): Data
+  + setDataFinePrevista(dataFinePrevista: Data): void
+  + getStato(): StatoConvivenza
+  + setStato(stato: StatoConvivenza): void
+  + getProposta(): PropostaAbbinamento
+  + setProposta(proposta: PropostaAbbinamento): void
+  + getHost(): UtenteRegistrato
+  + setHost(host: UtenteRegistrato): void
+  + getGuest(): UtenteRegistrato
+  + setGuest(guest: UtenteRegistrato): void
+  + getAlloggio(): Alloggio
+  + setAlloggio(alloggio: Alloggio): void
+}
+
+enum Ruolo {
+  HOST
+  GUEST
+  OPERATOR
+}
+
+enum StatoAlloggio {
+  DISPONIBILE
+}
+
+enum StatoConvivenza {
+  ATTIVA
+  CONCLUSA
+}
+
+note right of AlloggioRepository
+  extends JpaRepository<Alloggio, String>
+end note
+
+note right of UtenteRegistratoRepository
+  extends JpaRepository<UtenteRegistrato, String>
+end note
+
+note right of ConvivenzaRepository
+  extends JpaRepository<Convivenza, String>
+end note
+
+AlloggioRepository ..> Alloggio : <<use>>
+UtenteRegistratoRepository ..> UtenteRegistrato : <<use>>
+ConvivenzaRepository ..> Convivenza : <<use>>
+ConvivenzaService ..> AlloggioRepository : <<use>>
+ConvivenzaService ..> UtenteRegistratoRepository : <<use>>
+ConvivenzaService ..> ConvivenzaRepository : <<use>>
+UtenteRegistrato "1 host" -- "0..1" Alloggio : registra
+UtenteRegistrato "1 host" -- "0..*" Convivenza : ospita
+UtenteRegistrato "1 guest" -- "0..*" Convivenza : partecipa
+Alloggio "1" -- "0..*" Convivenza : sede di
+
+@enduml

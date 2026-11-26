@@ -1,0 +1,390 @@
+@startuml
+title Sottosistema: Gestione proposte
+skinparam classAttributeIconSize 0
+
+legend
+  Legenda
+  - - ->  tra service e repository/service: «use» (dipendenza iniettata)
+  - - ->  tra repository ed entity: «use» (JpaRepository<Entity, ID>)
+  ——  tra entity: associazione del CD ristrutturato (SDD 3.4.2)
+  Tipo Data come nel CD (in Java: LocalDate)
+endlegend
+
+class PropostaAbbinamentoService <<service>> {
+  - utenteRegistratoRepository: UtenteRegistratoRepository
+  - alloggioRepository: AlloggioRepository
+  - richiestaAbitativaRepository: RichiestaAbitativaRepository
+  - questionarioPreferenzeRepository: QuestionarioPreferenzeRepository
+  - domandaRepository: DomandaRepository
+  - rispostaRepository: RispostaRepository
+  - propostaAbbinamentoRepository: PropostaAbbinamentoRepository
+  - convivenzaRepository: ConvivenzaRepository
+  - matchingService: MatchingService
+  - richiestaAbitativaService: RichiestaAbitativaService
+  --
+  + individuaHost(idHost: String): UtenteRegistrato
+  + getDettagliGenerali(host: UtenteRegistrato): (profilo, preferenze)
+  + verificaDisponibilitaParti(host: UtenteRegistrato, guest: UtenteRegistrato, dataInizio: Data, dataFine: Data): Boolean
+  + registraProposta(p: PropostaAbbinamento): Boolean
+  + recuperaProposteRicevute(c: UtenteRegistrato): List<PropostaAbbinamento>
+  + individuaProposta(c: UtenteRegistrato, idProposta: String): PropostaAbbinamento
+  + componiDettaglio(p: PropostaAbbinamento): (proposta, alloggio, controparte, periodo)
+  + verificaPuoRispondere(p: PropostaAbbinamento, c: UtenteRegistrato): Boolean
+  + accetta(p: PropostaAbbinamento, c: UtenteRegistrato): Boolean
+  + rifiuta(p: PropostaAbbinamento, c: UtenteRegistrato): void
+  + accettataDaEntrambi(p: PropostaAbbinamento): Boolean
+  + avviaConvivenza(p: PropostaAbbinamento): Convivenza
+}
+
+class MatchingService <<service>>
+
+class RichiestaAbitativaService <<service>>
+
+class RichiestaAbitativaRepository <<repository>> {
+  + save(e: RichiestaAbitativa): RichiestaAbitativa
+  + findById(id: String): Optional<RichiestaAbitativa>
+  + findByGuest(guest: UtenteRegistrato): List<RichiestaAbitativa>
+  + findByStato(stato: StatoRichiesta): List<RichiestaAbitativa>
+  + existsByGuestAndStato(guest: UtenteRegistrato, stato: StatoRichiesta): boolean
+}
+
+class RichiestaAbitativa <<entity>> {
+  - codice: String
+  - dataInizioPermanenza: Data
+  - dataFinePermanenza: Data
+  - stato: StatoRichiesta
+  - guest: UtenteRegistrato
+  - areaGeografica: AreaGeografica
+  --
+  + RichiestaAbitativa()
+  + RichiestaAbitativa(guest: UtenteRegistrato, area: AreaGeografica, dataInizio: Data, dataFine: Data)
+  + getCodice(): String
+  + setCodice(codice: String): void
+  + getDataInizioPermanenza(): Data
+  + setDataInizioPermanenza(dataInizioPermanenza: Data): void
+  + getDataFinePermanenza(): Data
+  + setDataFinePermanenza(dataFinePermanenza: Data): void
+  + getStato(): StatoRichiesta
+  + setStato(stato: StatoRichiesta): void
+  + getGuest(): UtenteRegistrato
+  + setGuest(guest: UtenteRegistrato): void
+  + getAreaGeografica(): AreaGeografica
+  + setAreaGeografica(areaGeografica: AreaGeografica): void
+}
+
+class AlloggioRepository <<repository>> {
+  + save(e: Alloggio): Alloggio
+  + findById(id: String): Optional<Alloggio>
+  + findByHost(host: UtenteRegistrato): Optional<Alloggio>
+}
+
+class Alloggio <<entity>> {
+  - codice: String
+  - indirizzo: String
+  - tipologia: String
+  - dataInizioDisponibilita: Data
+  - dataFineDisponibilita: Data
+  - stato: StatoAlloggio
+  - host: UtenteRegistrato
+  - areaGeografica: AreaGeografica
+  --
+  + Alloggio()
+  + getCodice(): String
+  + setCodice(codice: String): void
+  + getIndirizzo(): String
+  + setIndirizzo(indirizzo: String): void
+  + getTipologia(): String
+  + setTipologia(tipologia: String): void
+  + getDataInizioDisponibilita(): Data
+  + setDataInizioDisponibilita(dataInizioDisponibilita: Data): void
+  + getDataFineDisponibilita(): Data
+  + setDataFineDisponibilita(dataFineDisponibilita: Data): void
+  + getStato(): StatoAlloggio
+  + setStato(stato: StatoAlloggio): void
+  + getHost(): UtenteRegistrato
+  + setHost(host: UtenteRegistrato): void
+  + getAreaGeografica(): AreaGeografica
+  + setAreaGeografica(areaGeografica: AreaGeografica): void
+}
+
+class UtenteRegistratoRepository <<repository>> {
+  + save(e: UtenteRegistrato): UtenteRegistrato
+  + findById(id: String): Optional<UtenteRegistrato>
+  + findByEmail(email: String): Optional<UtenteRegistrato>
+  + findByRuolo(ruolo: Ruolo): List<UtenteRegistrato>
+}
+
+class UtenteRegistrato <<entity>> {
+  - idUtente: String
+  - nome: String
+  - cognome: String
+  - email: String
+  - password: String
+  - dataNascita: Data
+  - ruolo: Ruolo
+  - alloggio: Alloggio
+  - risposte: List<Risposta>
+  --
+  + UtenteRegistrato()
+  + getIdUtente(): String
+  + setIdUtente(idUtente: String): void
+  + getNome(): String
+  + setNome(nome: String): void
+  + getCognome(): String
+  + setCognome(cognome: String): void
+  + getEmail(): String
+  + setEmail(email: String): void
+  + getPassword(): String
+  + setPassword(password: String): void
+  + getDataNascita(): Data
+  + setDataNascita(dataNascita: Data): void
+  + getRuolo(): Ruolo
+  + setRuolo(ruolo: Ruolo): void
+  + getAlloggio(): Alloggio
+  + setAlloggio(alloggio: Alloggio): void
+  + getRisposte(): List<Risposta>
+  + setRisposte(risposte: List<Risposta>): void
+}
+
+class PropostaAbbinamentoRepository <<repository>> {
+  + save(e: PropostaAbbinamento): PropostaAbbinamento
+  + findById(id: String): Optional<PropostaAbbinamento>
+  + findByHostOrRichiestaGuest(host: UtenteRegistrato, guest: UtenteRegistrato): List<PropostaAbbinamento>
+  + existsByHostAndStato(host: UtenteRegistrato, stato: StatoProposta): boolean
+  + existsByRichiestaGuestAndStato(guest: UtenteRegistrato, stato: StatoProposta): boolean
+}
+
+class PropostaAbbinamento <<entity>> {
+  - codice: String
+  - stato: StatoProposta
+  - esitoHost: EsitoRisposta
+  - esitoGuest: EsitoRisposta
+  - host: UtenteRegistrato
+  - richiesta: RichiestaAbitativa
+  - operator: UtenteRegistrato
+  --
+  + PropostaAbbinamento()
+  + PropostaAbbinamento(host: UtenteRegistrato, richiesta: RichiestaAbitativa, operator: UtenteRegistrato)
+  + getCodice(): String
+  + setCodice(codice: String): void
+  + getStato(): StatoProposta
+  + setStato(stato: StatoProposta): void
+  + getEsitoHost(): EsitoRisposta
+  + setEsitoHost(esitoHost: EsitoRisposta): void
+  + getEsitoGuest(): EsitoRisposta
+  + setEsitoGuest(esitoGuest: EsitoRisposta): void
+  + getHost(): UtenteRegistrato
+  + setHost(host: UtenteRegistrato): void
+  + getRichiesta(): RichiestaAbitativa
+  + setRichiesta(richiesta: RichiestaAbitativa): void
+  + getOperator(): UtenteRegistrato
+  + setOperator(operator: UtenteRegistrato): void
+}
+
+class ConvivenzaRepository <<repository>> {
+  + save(e: Convivenza): Convivenza
+  + findById(id: String): Optional<Convivenza>
+  + findAll(): List<Convivenza>
+  + findByFiltri(stato: StatoConvivenza, inizioDa: Data, inizioA: Data, fineDa: Data, fineA: Data, idHost: String, idGuest: String): List<Convivenza>
+  + existsByHostAndStato(host: UtenteRegistrato, stato: StatoConvivenza): boolean
+  + existsByGuestAndStato(guest: UtenteRegistrato, stato: StatoConvivenza): boolean
+}
+
+class Convivenza <<entity>> {
+  - codice: String
+  - dataInizio: Data
+  - dataFinePrevista: Data
+  - stato: StatoConvivenza
+  - proposta: PropostaAbbinamento
+  - host: UtenteRegistrato
+  - guest: UtenteRegistrato
+  - alloggio: Alloggio
+  --
+  + Convivenza()
+  + Convivenza(p: PropostaAbbinamento, stato: StatoConvivenza)
+  + getCodice(): String
+  + setCodice(codice: String): void
+  + getDataInizio(): Data
+  + setDataInizio(dataInizio: Data): void
+  + getDataFinePrevista(): Data
+  + setDataFinePrevista(dataFinePrevista: Data): void
+  + getStato(): StatoConvivenza
+  + setStato(stato: StatoConvivenza): void
+  + getProposta(): PropostaAbbinamento
+  + setProposta(proposta: PropostaAbbinamento): void
+  + getHost(): UtenteRegistrato
+  + setHost(host: UtenteRegistrato): void
+  + getGuest(): UtenteRegistrato
+  + setGuest(guest: UtenteRegistrato): void
+  + getAlloggio(): Alloggio
+  + setAlloggio(alloggio: Alloggio): void
+}
+
+class RispostaRepository <<repository>> {
+  + save(e: Risposta): Risposta
+  + findById(id: String): Optional<Risposta>
+  + findByConvivente(c: UtenteRegistrato): List<Risposta>
+}
+
+class Risposta <<entity>> {
+  - idRisposta: String
+  - valore: String
+  - convivente: UtenteRegistrato
+  - domanda: Domanda
+  --
+  + Risposta()
+  + getIdRisposta(): String
+  + setIdRisposta(idRisposta: String): void
+  + getValore(): String
+  + setValore(valore: String): void
+  + getConvivente(): UtenteRegistrato
+  + setConvivente(convivente: UtenteRegistrato): void
+  + getDomanda(): Domanda
+  + setDomanda(domanda: Domanda): void
+}
+
+class DomandaRepository <<repository>> {
+  + save(e: Domanda): Domanda
+  + findById(id: String): Optional<Domanda>
+  + findByQuestionario(q: QuestionarioPreferenze): List<Domanda>
+}
+
+class Domanda <<entity>> {
+  - idDomanda: String
+  - testo: String
+  - opzioni: String {JSONB}
+  - questionario: QuestionarioPreferenze
+  --
+  + Domanda()
+  + getIdDomanda(): String
+  + setIdDomanda(idDomanda: String): void
+  + getTesto(): String
+  + setTesto(testo: String): void
+  + getOpzioni(): String {JSONB}
+  + setOpzioni(opzioni: String {JSONB}): void
+  + getQuestionario(): QuestionarioPreferenze
+  + setQuestionario(questionario: QuestionarioPreferenze): void
+}
+
+class QuestionarioPreferenzeRepository <<repository>> {
+  + save(e: QuestionarioPreferenze): QuestionarioPreferenze
+  + findById(id: String): Optional<QuestionarioPreferenze>
+  + findAll(): List<QuestionarioPreferenze>
+}
+
+class QuestionarioPreferenze <<entity>> {
+  - idQuestionario: String
+  - domande: List<Domanda>
+  --
+  + QuestionarioPreferenze()
+  + getIdQuestionario(): String
+  + setIdQuestionario(idQuestionario: String): void
+  + getDomande(): List<Domanda>
+  + setDomande(domande: List<Domanda>): void
+}
+
+enum Ruolo {
+  HOST
+  GUEST
+  OPERATOR
+}
+
+enum StatoRichiesta {
+  ATTIVA
+  ABBINATA
+  ANNULLATA
+}
+
+enum StatoAlloggio {
+  DISPONIBILE
+}
+
+enum StatoProposta {
+  IN_ATTESA_RISPOSTA
+  ACCETTATA
+  RIFIUTATA
+}
+
+enum EsitoRisposta {
+  IN_ATTESA
+  ACCETTATA
+  RIFIUTATA
+}
+
+enum StatoConvivenza {
+  ATTIVA
+  CONCLUSA
+}
+
+note right of MatchingService
+  compartimenti soppressi – struttura completa in «Gestione matching»
+end note
+
+note right of RichiestaAbitativaService
+  compartimenti soppressi – struttura completa in «Gestione richieste abitative»
+end note
+
+note right of RichiestaAbitativaRepository
+  extends JpaRepository<RichiestaAbitativa, String>
+end note
+
+note right of AlloggioRepository
+  extends JpaRepository<Alloggio, String>
+end note
+
+note right of UtenteRegistratoRepository
+  extends JpaRepository<UtenteRegistrato, String>
+end note
+
+note right of PropostaAbbinamentoRepository
+  extends JpaRepository<PropostaAbbinamento, String>
+end note
+
+note right of ConvivenzaRepository
+  extends JpaRepository<Convivenza, String>
+end note
+
+note right of RispostaRepository
+  extends JpaRepository<Risposta, String>
+end note
+
+note right of DomandaRepository
+  extends JpaRepository<Domanda, String>
+end note
+
+note right of QuestionarioPreferenzeRepository
+  extends JpaRepository<QuestionarioPreferenze, String>
+end note
+
+PropostaAbbinamentoService ..> MatchingService : <<use>>
+PropostaAbbinamentoService ..> RichiestaAbitativaService : <<use>>
+RichiestaAbitativaRepository ..> RichiestaAbitativa : <<use>>
+AlloggioRepository ..> Alloggio : <<use>>
+UtenteRegistratoRepository ..> UtenteRegistrato : <<use>>
+PropostaAbbinamentoRepository ..> PropostaAbbinamento : <<use>>
+ConvivenzaRepository ..> Convivenza : <<use>>
+RispostaRepository ..> Risposta : <<use>>
+DomandaRepository ..> Domanda : <<use>>
+QuestionarioPreferenzeRepository ..> QuestionarioPreferenze : <<use>>
+PropostaAbbinamentoService ..> RichiestaAbitativaRepository : <<use>>
+PropostaAbbinamentoService ..> AlloggioRepository : <<use>>
+PropostaAbbinamentoService ..> UtenteRegistratoRepository : <<use>>
+PropostaAbbinamentoService ..> PropostaAbbinamentoRepository : <<use>>
+PropostaAbbinamentoService ..> ConvivenzaRepository : <<use>>
+PropostaAbbinamentoService ..> RispostaRepository : <<use>>
+PropostaAbbinamentoService ..> DomandaRepository : <<use>>
+PropostaAbbinamentoService ..> QuestionarioPreferenzeRepository : <<use>>
+Domanda "1" -- "0..*" Risposta : riceve
+QuestionarioPreferenze "1" *-- "1..*" Domanda : contiene
+UtenteRegistrato "1 host" -- "0..1" Alloggio : registra
+UtenteRegistrato "1 operator" -- "0..*" PropostaAbbinamento : formula
+UtenteRegistrato "1 host" -- "0..*" PropostaAbbinamento : riceve
+PropostaAbbinamento "1" -- "0..1" Convivenza : genera
+UtenteRegistrato "1 guest" -- "0..*" RichiestaAbitativa : presenta
+UtenteRegistrato "1 host" -- "0..*" Convivenza : ospita
+UtenteRegistrato "1 guest" -- "0..*" Convivenza : partecipa
+PropostaAbbinamento "0..*" -- "1" RichiestaAbitativa : riguarda
+Alloggio "1" -- "0..*" Convivenza : sede di
+UtenteRegistrato "1 convivente" -- "0..*" Risposta : fornisce
+
+@enduml
