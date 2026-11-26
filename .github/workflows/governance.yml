@@ -1,9 +1,8 @@
 name: Governance PR
 
+# Prima della review, se manca un check valido sul commit corrente, il check
+# obbligatorio resta in attesa e blocca il merge ordinario. La review avvia il gate.
 on:
-  pull_request:
-    branches: [main]
-    types: [opened, reopened, synchronize, edited, labeled, unlabeled, ready_for_review, converted_to_draft]
   pull_request_review:
     types: [submitted, dismissed]
 
