@@ -9,7 +9,6 @@ dipendenze e comandi definitivi seguiranno l’approvazione dell’SDD.
 - [Indice delle fonti](docs/README.md) raccoglie i riferimenti al RAD, all’SDD e ai test.
 - [Regole comuni](AGENTS.md) e [profili degli agenti](.github/agents/) definiscono compiti e limiti.
 
-Il workflow adatta le fasi di NeighborCare (C01) e del kit GPS/IS a I-Need.
 Usa Copilot CLI per i quattro ruoli e comandi deterministici per i controlli.
 
 ## Dalla Issue al merge
