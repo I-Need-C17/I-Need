@@ -1,78 +1,37 @@
-
-
-\# 3.5.3.6 MU\_OPERATOR
-
-
+# 3.5.3.6 MU_OPERATOR
 
 I-Need
 
-
-
-\- Home
-
-\- Richieste abitative
-
-\- Convivenze
-
-
+- Home
+- Richieste abitative
+- Convivenze
 
 Operator
 
+## Dettaglio Host
 
+- Area messaggi
+  - Conferma invio proposta / Errore tecnico
+- Profilo dell’Host
+- Alloggio
+- Preferenze dell’Host
+- Invia proposta di abbinamento
+- Torna alla graduatoria
+- Torna alle richieste
 
-\## Dettaglio Host
+## Dettaglio richiesta abitativa
 
+- Informazioni sulla richiesta abitativa
+- Graduatoria Host idonei per compatibilità
+- Cerca Host Idonei
+- Torna alle richieste
 
+## Home Operator
 
-\- Area messaggi
+- Richieste abitative
+- Convivenze
 
-&#x20; - Conferma invio proposta / Errore tecnico
+## Richieste abitative
 
-\- Profilo dell’Host
-
-\- Alloggio
-
-\- Preferenze dell’Host
-
-\- Invia proposta di abbinamento
-
-\- Torna alla graduatoria
-
-\- Torna alle richieste
-
-
-
-\## Dettaglio richiesta abitativa
-
-
-
-\- Informazioni sulla richiesta abitativa
-
-\- Graduatoria Host idonei per compatibilità
-
-\- Cerca Host Idonei
-
-\- Torna alle richieste
-
-
-
-\## Home Operator
-
-
-
-\- Richieste abitative
-
-\- Convivenze
-
-
-
-\## Richieste abitative
-
-
-
-\- Elenco richieste abitative attive
-
-\- Visualizza dettaglio
-
-
-
+- Elenco richieste abitative attive
+- Visualizza dettaglio
