@@ -32,7 +32,11 @@ jobs:
             });
             const sha = pr.head.sha;
             const problems = [];
-            if (pr.state !== 'open' || pr.draft) {
+            if (pr.state !== 'open') {
+              core.notice('PR chiusa: governance gate non applicabile.');
+              return;
+            }
+            if (pr.draft) {
               problems.push('La PR deve essere aperta e Ready for review.');
             }
             if (pr.base.ref !== 'main' ||
