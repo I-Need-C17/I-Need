@@ -1,0 +1,26 @@
+@startuml Attori_Sistema_I-Need
+title Attori del Sistema Proposto I-Need
+
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ActorBackgroundColor #FFFFFF
+skinparam ActorBorderColor #000000
+skinparam ArrowColor #000000
+skinparam linetype ortho
+
+actor "Utente Non Registrato" as UNR
+actor "Utente Registrato" as UR
+actor "Convivente" as CONV
+actor "Host" as HOST
+actor "Guest" as GUEST
+actor "Operator" as OP
+actor "Admin" as ADMIN
+
+UNR -[hidden]right-> UR
+
+UR <|-- CONV
+UR <|-- OP
+UR <|-- ADMIN
+CONV <|-- HOST
+CONV <|-- GUEST
+@enduml
