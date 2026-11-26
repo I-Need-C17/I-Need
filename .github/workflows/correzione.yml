@@ -5,9 +5,9 @@ on:
     types: [created]
 
 permissions:
-  contents: write
+  contents: read
   issues: read
-  pull-requests: write
+  pull-requests: read
 
 concurrency:
   group: correggi-${{ github.event.issue.number }}
@@ -19,6 +19,15 @@ jobs:
     runs-on: ubuntu-24.04
     environment: copilot-student
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    outputs:
+      skip: ${{ steps.guard.outputs.skip }}
+      pr_branch: ${{ steps.guard.outputs.pr_branch }}
+      pr_sha: ${{ steps.guard.outputs.pr_sha }}
+      request_id: ${{ steps.guard.outputs.request_id }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -74,6 +83,7 @@ jobs:
             core.setOutput('pr_branch',pr.head.ref);
             core.setOutput('pr_sha',pr.head.sha);
             core.setOutput('issue_number',String(issueNumber));
+            core.setOutput('request_id',String(feedback.id));
             core.notice('TM autorizzato, branch e ambito originale verificati.');
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: ${{ steps.guard.outputs.skip == 'false' }}
@@ -155,44 +165,77 @@ jobs:
             }
           done < <(git diff --cached --name-only -z)
           git write-tree > "$RUNNER_TEMP/verified-tree"
-      - name: Registra build e test disponibili per il report
-        id: verifiche
+      - name: Prepara patch per il job di pubblicazione
         if: ${{ steps.guard.outputs.skip == 'false' }}
-        uses: ./.github/actions/verifiche-app
+        run: |
+          set -euo pipefail
+          git diff --cached --binary > "$RUNNER_TEMP/correction.patch"
+          test -s "$RUNNER_TEMP/correction.patch"
+          cp "$RUNNER_TEMP/report.md" "$RUNNER_TEMP/correction-report.md"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ steps.guard.outputs.skip == 'false' }}
         with:
-          continua-dopo-errore: 'true'
-      - name: Pubblica correzione sul branch esistente e report
-        if: ${{ steps.guard.outputs.skip == 'false' }}
+          name: correzione-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/correction.patch
+            ${{ runner.temp }}/correction-report.md
+          if-no-files-found: error
+          retention-days: 1
+
+  pubblica:
+    needs: correggi
+    if: ${{ needs.correggi.outputs.skip == 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.correggi.outputs.pr_sha }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: correzione-${{ github.run_id }}
+          path: ${{ runner.temp }}/correzione
+      - name: Applica patch e pubblica la correzione verificata
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.issue.number }}
-          PR_BRANCH: ${{ steps.guard.outputs.pr_branch }}
-          EXPECTED_SHA: ${{ steps.guard.outputs.pr_sha }}
-          COMMENT_ID: ${{ github.event.comment.id }}
-          CHECK_STATUS: ${{ steps.verifiche.outputs.exit-code }}
+          PR_BRANCH: ${{ needs.correggi.outputs.pr_branch }}
+          EXPECTED_SHA: ${{ needs.correggi.outputs.pr_sha }}
+          REQUEST_ID: ${{ needs.correggi.outputs.request_id }}
         run: |
           set -euo pipefail
           actual="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq 'select(.draft and .state == "open") | .head.sha')"
-          test "$actual" = "$EXPECTED_SHA" || { echo '::error::PR aggiornata nel frattempo: rifare la verifica'; exit 1; }
-          test "$(git write-tree)" = "$(cat "$RUNNER_TEMP/verified-tree")"
-          git switch -c "$PR_BRANCH"
+          test "$actual" = "$EXPECTED_SHA" || { echo '::error::PR aggiornata nel frattempo: rifare la correzione'; exit 1; }
+          git apply --index "$RUNNER_TEMP/correzione/correction.patch"
+          git diff --cached --check
+          test -n "$(git diff --cached --name-only)"
           git -c user.name='github-actions[bot]' \
             -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
             commit -m "fix: TM-requested correction for PR #$PR_NUMBER"
-          gh auth setup-git
           git push origin "HEAD:refs/heads/$PR_BRANCH"
           {
             echo "## Correzione AI — PR #$PR_NUMBER"
             echo
-            echo "Richiesta TM: $COMMENT_ID"
+            echo "Richiesta TM: $REQUEST_ID"
             echo "Commit corretto: $(git rev-parse HEAD)"
-            echo "Verifiche applicative (exit code): $CHECK_STATUS"
-            echo 'La PR resta Draft; richiedere nuovamente il Tester e poi il Revisore.'
+            echo 'Verifiche applicative demandate al Tester indipendente.'
+            echo 'La PR resta Draft fino al completamento del Tester e del Revisore.'
             echo
-            cat "$RUNNER_TEMP/report.md"
+            cat "$RUNNER_TEMP/correzione/correction-report.md"
           } > "$RUNNER_TEMP/correction-comment.md"
           gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
             --body-file "$RUNNER_TEMP/correction-comment.md"
-          test "$CHECK_STATUS" = '0' || {
-            echo '::error::Build o test ancora falliti: non procedere al merge.'; exit 1;
-          }
+      - name: Avvia il Tester sul nuovo commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+          PR_BRANCH: ${{ needs.correggi.outputs.pr_branch }}
+        run: |
+          gh workflow run ci.yml --ref "$PR_BRANCH" -f pr_number="$PR_NUMBER"
+          gh workflow run test.yml --ref main -f pr_number="$PR_NUMBER"
