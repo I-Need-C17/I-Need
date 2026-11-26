@@ -67,8 +67,7 @@ jobs:
                 problems.push('La PR agentica deve essere collegata alla Issue con un solo TM assegnato.');
               }
 
-              // Eccezione SOLO per il primo bootstrap di un modulo vuoto:
-              // richiede Revisore AI, Code Owner e CI; Tester applicativo N/A.
+              // Rileva il primo bootstrap per annotarlo; il Tester verifica comunque ogni manifest presente.
               const buildAction = '.github/actions/verifiche-app/action.yml';
               const modules = files.filter(f => f.filename !== buildAction);
               let bootstrap = !docsOnly && modules.length > 0 &&
@@ -116,17 +115,17 @@ jobs:
                 if (docsOnly) {
                   return body.startsWith(`## Tester indipendente — verifica documentale\n\nCommit esaminato: ${sha}\nRun Actions: `);
                 }
-                const [title, , start, end, run, result] = body.split('\n', 6);
+                const [title, , start, end, run, result] = body.split('\n');
                 return title === `## Tester indipendente — PR #${prNumber}` &&
                   /^Commit di partenza: [a-f0-9]{40}$/.test(start || '') &&
                   end === `Commit dopo il test: ${sha}` && /^Run Actions: [1-9]\d*$/.test(run || '') &&
                   result === 'Risultato dei test automatici (exit code): 0';
               });
-              if (!testerReport && !bootstrap) {
+              if (!testerReport) {
                 problems.push('Manca il Tester riuscito e riferito al commit corrente.');
               }
               if (bootstrap) {
-                core.notice('Primo bootstrap: Tester applicativo N/A; verificare build e test reali nella CI.');
+                core.notice('Primo bootstrap: il Tester verifica i componenti inizializzati e segnala i manifest incompleti.');
               }
 
               async function successfulRun(report, name) {
@@ -135,13 +134,15 @@ jobs:
                 const {data: run} = await github.rest.actions.getWorkflowRun({
                   ...context.repo, run_id: Number(id)
                 });
-                return run.name === name && run.event === 'pull_request_target' &&
+                const expectedEvents = name === 'Revisore'
+                  ? ['workflow_dispatch'] : ['pull_request_target', 'workflow_dispatch'];
+                return run.name === name && expectedEvents.includes(run.event) &&
                   run.status === 'completed' && run.conclusion === 'success';
               }
               if (aiReport && !await successfulRun(aiReport, 'Revisore')) {
                 problems.push('Il run del Revisore associato al report non risulta riuscito.');
               }
-              if (!bootstrap && testerReport && !await successfulRun(testerReport, 'Tester indipendente')) {
+              if (testerReport && !await successfulRun(testerReport, 'Tester indipendente')) {
                 problems.push('Il run del Tester associato al report non risulta riuscito.');
               }
 
