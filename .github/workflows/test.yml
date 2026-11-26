@@ -1,29 +1,44 @@
 name: Tester indipendente
 
 on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request corretta da ritestare
+        required: true
+        type: string
   pull_request_target:
     branches: [main]
     types: [labeled]
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
+  pull-requests: read
   issues: read
 
 concurrency:
-  group: test-${{ github.event.pull_request.number }}
+  group: test-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: false
 
 jobs:
   test:
-    if: ${{ github.event.label.name == 'fase:test' && github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.head.ref != 'main' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event.label.name == 'fase:test') && (github.event.pull_request.draft || github.event_name == 'workflow_dispatch') && (github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'workflow_dispatch') && github.event.pull_request.head.ref != 'main' }}
     runs-on: ubuntu-24.04
     environment: copilot-student
     timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+    outputs:
+      head_sha: ${{ steps.guard.outputs.head_sha }}
+      pr_branch: ${{ steps.guard.outputs.pr_branch }}
+      docs_only: ${{ steps.guard.outputs.docs_only }}
+      issue_number: ${{ steps.guard.outputs.issue_number }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Autorizza il Tester e distingue le PR documentali
         id: guard
@@ -33,27 +48,37 @@ jobs:
             const fs = require('node:fs');
             const path = require('node:path');
             const event = context.payload.pull_request;
-            const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: event.number});
-            if (!pr.draft || pr.state !== 'open' || pr.head.sha !== event.head.sha ||
+            const prNumber = event?.number ?? Number(context.payload.inputs?.pr_number);
+            if (!Number.isSafeInteger(prNumber) || prNumber < 1) throw new Error('Numero PR non valido.');
+            const {data: pr} = await github.rest.pulls.get({...context.repo, pull_number: prNumber});
+            if (pr.state !== 'open' || pr.head.repo?.full_name !== context.repo.owner + '/' + context.repo.repo ||
+                (event && (!pr.draft || pr.head.sha !== event.head.sha)) ||
+                (context.eventName === 'workflow_dispatch' && !pr.draft) ||
                 !pr.labels.some(label => label.name === 'fase:test')) {
               throw new Error('Serve la Draft PR corrente con fase:test.');
             }
+            core.setOutput('head_sha',pr.head.sha);
+            core.setOutput('pr_branch',pr.head.ref);
             const branch = /^agent\/issue-([1-9]\d*)-implementazione$/.exec(pr.head.ref);
             let approved;
             if (branch) {
               const {approvedPlan} = require(path.join(process.env.GITHUB_WORKSPACE, '.github/scripts/piano.cjs'));
               approved = await approvedPlan(github, context.repo, Number(branch[1]));
-              if (context.payload.sender?.id !== approved.tm.id || approved.labels.includes('fase:piano') ||
+              const initiatedByAuthorizedTrigger = context.eventName === 'workflow_dispatch'
+                ? context.actor === 'github-actions[bot]' : context.payload.sender?.id === approved.tm.id;
+              if (!initiatedByAuthorizedTrigger || approved.labels.includes('fase:piano') ||
                   pr.user?.login !== 'github-actions[bot]' ||
                   !pr.body?.startsWith(`<!-- i-need:pr ${approved.selected.id} ${approved.approval.id} -->\nCloses #${branch[1]}\n`)) {
                 throw new Error('Serve il TM assegnato e la PR del piano approvato.');
               }
             }
-            const {data:perm}=await github.rest.repos.getCollaboratorPermissionLevel({
-              ...context.repo, username:context.actor
-            });
-            if (!['write','maintain','admin'].includes(perm.permission)) {
-              core.setFailed('La label Test puo essere attivata solo dal team con accesso Write.'); return;
+            if (context.eventName !== 'workflow_dispatch') {
+              const {data:perm}=await github.rest.repos.getCollaboratorPermissionLevel({
+                ...context.repo, username:context.actor
+              });
+              if (!['write','maintain','admin'].includes(perm.permission)) {
+                core.setFailed('La label Test puo essere attivata solo dal team con accesso Write.'); return;
+              }
             }
             const files=await github.paginate(github.rest.pulls.listFiles,{
               ...context.repo,pull_number:pr.number,per_page:100
@@ -66,7 +91,6 @@ jobs:
                f.filename==='.gitignore' || f.filename.startsWith('.github/') ||
                f.filename.startsWith('docs/'))
             );
-            core.setOutput('head_sha',pr.head.sha);
             if (!docsOnly) {
               const comments=await github.paginate(github.rest.issues.listComments,{
                 ...context.repo,issue_number:pr.number,per_page:100
@@ -125,7 +149,7 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         if: ${{ steps.guard.outputs.docs_only == 'false' }}
         with:
-          ref: ${{ github.event.pull_request.head.sha }}
+          ref: ${{ steps.guard.outputs.head_sha }}
           persist-credentials: false
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         if: ${{ steps.guard.outputs.docs_only == 'false' }}
@@ -147,7 +171,7 @@ jobs:
         if: ${{ steps.guard.outputs.docs_only == 'false' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
           ISSUE_NUMBER: ${{ steps.guard.outputs.issue_number }}
         run: |
           set -euo pipefail
@@ -218,58 +242,117 @@ jobs:
           fi
           git diff --cached --check
           git write-tree > "$RUNNER_TEMP/verified-tree"
-      - name: Esegui i test disponibili e registra esito
-        id: verifiche
+      - name: Prepara gli artefatti per il job di pubblicazione
         if: ${{ steps.guard.outputs.docs_only == 'false' }}
+        run: |
+          set -euo pipefail
+          test "$(git write-tree)" = "$(cat "$RUNNER_TEMP/verified-tree")"
+          git diff --cached --binary > "$RUNNER_TEMP/tester.patch"
+          cp "$RUNNER_TEMP/tester.md" "$RUNNER_TEMP/tester-summary.md"
+      - name: Prepara report N/A documentale
+        if: ${{ steps.guard.outputs.docs_only == 'true' }}
+        env:
+          HEAD_SHA: ${{ steps.guard.outputs.head_sha }}
+        run: |
+          { printf '## Tester indipendente — verifica documentale\n\nCommit esaminato: %s\nRun Actions: %s\n\n' "$HEAD_SHA" "$GITHUB_RUN_ID";
+            echo 'PR solo documentale o di governance: Test Frame applicativi N/A; nessun test fittizio.';
+          } > "$RUNNER_TEMP/tester-summary.md"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: tester-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tester.patch
+            ${{ runner.temp }}/tester-summary.md
+          if-no-files-found: error
+          retention-days: 1
+
+  verifica:
+    needs: test
+    if: ${{ needs.test.outputs.docs_only == 'false' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      exit_code: ${{ steps.verifiche.outputs.exit-code }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.test.outputs.head_sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: tester-${{ github.run_id }}
+          path: ${{ runner.temp }}/tester
+      - name: Applica i nuovi test autorizzati
+        run: |
+          set -euo pipefail
+          if [ -s "$RUNNER_TEMP/tester/tester.patch" ]; then
+            git apply --index "$RUNNER_TEMP/tester/tester.patch"
+            git diff --cached --check
+          fi
+      - name: Esegue build e test senza credenziali privilegiate
+        id: verifiche
         uses: ./.github/actions/verifiche-app
         with:
           continua-dopo-errore: 'true'
-      - name: Verifica SHA e pubblica solo i nuovi test
-        if: ${{ steps.guard.outputs.docs_only == 'false' }}
+
+  pubblica:
+    needs: [test, verifica]
+    if: ${{ always() && needs.test.result == 'success' && (needs.verifica.result == 'success' || needs.test.outputs.docs_only == 'true') && needs.test.outputs.docs_only != 'already' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: read
+      pull-requests: write
+      actions: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.test.outputs.head_sha }}
+          fetch-depth: 0
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
+        with:
+          name: tester-${{ github.run_id }}
+          path: ${{ runner.temp }}/tester
+      - name: Pubblica report e test e avvia il Revisore se riusciti
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
-          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
-          TEST_STATUS: ${{ steps.verifiche.outputs.exit-code }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_BRANCH: ${{ needs.test.outputs.pr_branch }}
+          EXPECTED_SHA: ${{ needs.test.outputs.head_sha }}
+          DOCS_ONLY: ${{ needs.test.outputs.docs_only }}
         run: |
           set -euo pipefail
           actual="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq 'select(.draft and .state == "open") | .head.sha')"
-          test "$actual" = "$EXPECTED_SHA" || {
-            echo "::error::Il branch e cambiato durante i test: non pubblicare."; exit 1;
-          }
-          test "$(git write-tree)" = "$(cat "$RUNNER_TEMP/verified-tree")"
-          git switch -c "$PR_BRANCH"
-          if ! git diff --cached --quiet; then
-            git -c user.name='github-actions[bot]' \
-              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-              commit -m "test: frame indipendenti per PR #${PR_NUMBER}"
+          test "$actual" = "$EXPECTED_SHA" || { echo '::error::PR cambiata durante le verifiche.'; exit 1; }
+          TEST_STATUS=0
+          if [ "$DOCS_ONLY" != 'true' ]; then
+          TEST_STATUS="${{ needs.verifica.outputs.exit_code }}"
+            if [ -s "$RUNNER_TEMP/tester/tester.patch" ]; then
+              git apply --index "$RUNNER_TEMP/tester/tester.patch"
+              git diff --cached --check
+              git -c user.name='github-actions[bot]' \
+                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                commit -m "test: frame indipendenti per PR #$PR_NUMBER"
+            fi
+            git push origin "HEAD:refs/heads/$PR_BRANCH"
           fi
-          gh auth setup-git
-          git push origin "HEAD:refs/heads/$PR_BRANCH"
-          { printf '## Tester indipendente — PR #%s\n\n' "$PR_NUMBER";
-            printf 'Commit di partenza: %s\n' "$EXPECTED_SHA";
-            printf 'Commit dopo il test: %s\nRun Actions: %s\n' "$(git rev-parse HEAD)" "$GITHUB_RUN_ID";
-            printf 'Risultato dei test automatici (exit code): %s\n\n' "$TEST_STATUS";
-            cat "$RUNNER_TEMP/tester.md";
-          } > "$RUNNER_TEMP/tester-report.md"
-          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
-            --body-file "$RUNNER_TEMP/tester-report.md"
-          test "$TEST_STATUS" = '0' || {
-            echo "::error::Verifiche applicative fallite: il task necessita correzioni."; exit 1;
-          }
-      - name: Registra test applicativi N/A per PR documentale
-        if: ${{ steps.guard.outputs.docs_only == 'true' }}
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        with:
-          script: |
-            const n=context.payload.pull_request.number;
-            const existing=await github.paginate(github.rest.issues.listComments,{
-              ...context.repo,issue_number:n,per_page:100
-            });
-            if (existing.some(c=>c.user?.login === 'github-actions[bot]' && c.created_at === c.updated_at && (c.body||'').startsWith('## Tester indipendente — verifica documentale') &&
-                (c.body||'').includes('Commit esaminato: '+context.payload.pull_request.head.sha))) {
-              core.notice('Report N/A gia presente: non duplicare.'); return;
-            }
-            await github.rest.issues.createComment({...context.repo,issue_number:n,
-              body:'## Tester indipendente — verifica documentale\n\nCommit esaminato: '+context.payload.pull_request.head.sha+'\nRun Actions: '+process.env.GITHUB_RUN_ID+'\n\nLa PR contiene solo documentazione o governance. Test Frame applicativi N/A: controllare il diff, i collegamenti e i documenti in review. Non sono stati generati test fittizi.'});
+          PUBLISHED_SHA="$(git rev-parse HEAD)"
+          if [ "$DOCS_ONLY" = 'true' ]; then
+            sed -i "s/Commit esaminato: $EXPECTED_SHA/Commit esaminato: $PUBLISHED_SHA/" "$RUNNER_TEMP/tester/tester-summary.md"
+            cp "$RUNNER_TEMP/tester/tester-summary.md" "$RUNNER_TEMP/tester-report.md"
+          else
+            { printf '## Tester indipendente — PR #%s\n\nCommit di partenza: %s\nCommit dopo il test: %s\nRun Actions: %s\nRisultato dei test automatici (exit code): %s\n\n' "$PR_NUMBER" "$EXPECTED_SHA" "$PUBLISHED_SHA" "$GITHUB_RUN_ID" "$TEST_STATUS";
+              cat "$RUNNER_TEMP/tester/tester-summary.md";
+            } > "$RUNNER_TEMP/tester-report.md"
+          fi
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/tester-report.md"
+          if [ "$TEST_STATUS" = '0' ]; then
+            gh workflow run ci.yml --ref "$PR_BRANCH" -f pr_number="$PR_NUMBER"
+            gh workflow run revisione.yml --ref main -f pr_number="$PR_NUMBER" -f expected_sha="$PUBLISHED_SHA"
+          else
+            echo '::error::Test falliti: attendere una nuova richiesta TM.'
+            exit 1
+          fi
