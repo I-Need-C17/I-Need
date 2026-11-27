@@ -40,9 +40,9 @@ class ClassificatorePrioritaTest {
     }
 
     @Test
-    void SIM_TF_05_limiteSetteRestituisceAlta() {
+    void SIM_TF_05_limiteSetteRestituisceNormale() {
         assertEquals(
-            ClassificatorePriorita.Priorita.ALTA,
+            ClassificatorePriorita.Priorita.NORMALE,
             ClassificatorePriorita.classifica(7)
         );
     }
@@ -68,6 +68,14 @@ class ClassificatorePrioritaTest {
         assertThrows(
             IllegalArgumentException.class,
             () -> ClassificatorePriorita.classifica(11)
+        );
+    }
+
+    @Test
+    void SIM_TF_09_limiteOttoRestituisceAlta() {
+        assertEquals(
+            ClassificatorePriorita.Priorita.ALTA,
+            ClassificatorePriorita.classifica(8)
         );
     }
 }
