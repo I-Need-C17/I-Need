@@ -1,0 +1,101 @@
+"""Report CI strutturale e parser JUnit da estendere con il bootstrap."""
+import os
+import re
+import sys
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
+def count_reports(reports):
+    total = skipped = errors = 0
+    database_skipped = False
+    for report in reports:
+        for case in ET.parse(report).getroot().iter("testcase"):
+            total += 1
+            skipped += case.find("skipped") is not None
+            errors += case.find("failure") is not None or case.find("error") is not None
+            if "DatabaseIntegrationTest" in case.get("classname", "") and case.find("skipped") is not None:
+                database_skipped = True
+    return total - skipped, skipped, errors, database_skipped
+
+def failed_test_names(reports, limit=10):
+    names = []
+    for report in reports:
+        for case in ET.parse(report).getroot().iter("testcase"):
+            if case.find("failure") is None and case.find("error") is None:
+                continue
+            label = (case.get("classname", "") + "." + case.get("name", "test senza nome")).strip(".")
+            # Single-line, bounded plain text. Never publish assertion messages or secrets.
+            label = re.sub(r"[^\w .,:;()/+\-]", "_", label)[:180]
+            label = re.sub(r"(?:github_pat_|ghp_|gho_|ghs_|sk-ant-)[A-Za-z0-9_-]+", "REDACTED", label)
+            names.append(label)
+    return "; ".join(names[:limit]) + (f"; altri {len(names)-limit} (vedi log)" if len(names) > limit else "")
+
+def structural_status(root=Path(".")):
+    output = {}
+    for name, directory in (("backend", "backend"), ("frontend", "frontend"), ("ai_service", "ai-service")):
+        initialized = any(p.is_file() and p.name != ".gitkeep" for p in (root / directory).rglob("*"))
+        output[name] = ("Non eseguito (CI applicativa da configurare)" if initialized
+                        else "N/A (componente non inizializzato)")
+    return output
+
+def structural_summary():
+    output = structural_status()
+    text = "## CI iniziale: controlli strutturali\n\n"
+    text += "\n".join(f"- {name}: {status}" for name, status in output.items())
+    text += "\n\nNessun test applicativo eseguito. Build, database, test, coverage e SonarQube saranno configurati con il bootstrap."
+    print(text)
+    if os.environ.get("GITHUB_STEP_SUMMARY"):
+        with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+            stream.write(text + "\n")
+    if os.environ.get("GITHUB_OUTPUT"):
+        with open(os.environ["GITHUB_OUTPUT"], "a") as stream:
+            for name, status in output.items():
+                stream.write(f"{name}={status}\n")
+    return 0
+
+def main():
+    if "--structural-only" in sys.argv:
+        return structural_summary()
+    summary = []
+    output = {}
+    checks = {
+        "Backend": list(Path("backend/target/surefire-reports").glob("TEST-*.xml"))
+                   + list(Path("backend/target/failsafe-reports").glob("TEST-*.xml")),
+        "Frontend": [Path("frontend/test-results/junit.xml")],
+    }
+    failed = False
+    for name, reports in checks.items():
+        try:
+            if not reports:
+                raise OSError("Nessun report")
+            executed, skipped, errors, database_skipped = count_reports(reports)
+            print(f"{name}: eseguiti={executed}, falliti/errori={errors}, saltati={skipped}")
+            output[name.lower()] = f"{executed - errors} superati, {errors} falliti/errori, {skipped} saltati"
+            output[name.lower() + "_failed"] = failed_test_names(reports)
+            summary.append(f"| {name} | {executed - errors} | {errors} | {skipped} |")
+            failed |= not executed or bool(errors)
+            if name == "Backend" and os.environ.get("INEED_DB_TESTS") == "true" and database_skipped:
+                print("Test di integrazione PostgreSQL saltato nonostante il servizio attivo")
+                failed = True
+        except (OSError, ET.ParseError) as exc:
+            print(f"{name}: report non disponibile o non valido: {exc}")
+            output[name.lower()] = "Non disponibile"
+            output[name.lower() + "_failed"] = ""
+            summary.append(f"| {name} | N/D | N/D | N/D |")
+            failed = True
+    if "--summary" in sys.argv:
+        table = "\n".join(["## Risultati test JUnit", "", "| Stack | Superati | Falliti/errori | Saltati |", "| --- | ---: | ---: | ---: |", *summary, "", "N/D: report assente, non valido o test non eseguiti. Consultare il job per gli errori di build/avvio."])
+        for name in ("backend", "frontend"):
+            if output.get(name + "_failed"):
+                table += f"\n\nTest falliti {name}: {output[name + '_failed']}"
+        if os.environ.get("GITHUB_STEP_SUMMARY"):
+            with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as stream:
+                stream.write(table + "\n")
+        if os.environ.get("GITHUB_OUTPUT"):
+            with open(os.environ["GITHUB_OUTPUT"], "a") as stream:
+                for name, value in output.items():
+                    stream.write(f"{name}={value}\n")
+    return int(failed)
+
+if __name__ == "__main__":
+    sys.exit(main())

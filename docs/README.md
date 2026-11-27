@@ -1,17 +1,12 @@
 # Fonti e tracciabilità
 
-Gli originali RAD e SDD sono aggiornati dal team in OneDrive. I TM versionano qui trasposizioni testuali verificate e modelli
-approvati, citando versione dell'originale, ID e commit della snapshot Git.
+Gli artefatti versionati in questa cartella costituiscono la baseline verificata di I-Need. Conservare contenuti, nomi e organizzazione; citare gli ID e le versioni delle fonti applicabili.
 
-- [rad/uc](rad/uc/) contiene i casi d'uso con gli ID originali.
-- [rad/modelli](rad/modelli/) accoglie Activity, Statechart, Sequence e Class Diagram RAD applicabili.
-- [sdd/modelli](sdd/modelli/) accoglie Design Goal, sottosistemi, livelli,
-  Component e Deployment, e Class Diagram ristrutturato a basso livello.
-- [test](test/) accoglie Category Partition, Test Frame e piano di test.
-- [design-patterns](design-patterns/) registra scelte e motivazioni dei pattern.
-- [contratti](contratti/) accoglie interfacce e API approvate.
+- [RAD](rad/C17_RequirementsAnalysisDocument_RAD.pdf) e [indice RAD](rad/README.md): requisiti, casi d'uso, scenari, UI e modelli.
+- [SDD](sdd/C17_SystemDesignDocument_SDD.pdf) e [indice SDD](sdd/README.md): architettura, sottosistemi, persistenza, deployment e Class Diagram ristrutturato.
+- [ODD](odd/C17_ObjectDesignDocument_ODD.pdf) e [indice ODD](odd/README.md): Class Diagram di sottosistema e Design Pattern.
+- [test/](test/): Category Partition, Test Frame, Test Case e altre specifiche di testing quando disponibili.
+- [contratti/](contratti/): interfacce e API approvate.
+- [Guida operativa del workflow](agentic-workflow-iterazioni.md).
 
-Le directory sono predisposte per le prossime consegne. Un titolo o un nome
-di file non dimostra l'esistenza di un requisito. Collega ogni decisione,
-cambiamento o test all'ID e alla versione della fonte da cui deriva.
-Segnala al TM o al PM ogni artefatto mancante o incongruente.
+Gli artefatti progettuali ufficiali sono gestiti manualmente dal team. I PM caricano ODD e diagrammi, i TM gestiscono le specifiche di testing. Gli agenti consultano le fonti senza modificarle. Segnalare al team ogni artefatto mancante, non leggibile o incongruente.

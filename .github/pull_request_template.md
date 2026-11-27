@@ -1,8 +1,8 @@
 ## Issue collegata
 
-<!-- Usa Closes #numero o Fixes #numero per una PR applicativa. Per una PR documentale manuale puoi usare Refs #numero. -->
+<!-- Closes #numero se il task è concluso; altrimenti Refs #numero. -->
 Issue e UC/requisiti:
-Piano e approvazione del TM assegnato:
+Piano e autorizzazione (label fase:implementazione, se task agentico):
 
 ## Modifiche effettuate
 
@@ -10,7 +10,7 @@ Piano e approvazione del TM assegnato:
 
 ## Modelli consultati
 
-<!-- File/link, versione e approvazione di RAD, SDD, diagrammi e Test Frame pertinenti. -->
+<!-- File/link, versione e approvazione di RAD, SDD, ODD, diagrammi e Test Frame pertinenti. -->
 
 ## Test eseguiti
 
@@ -23,11 +23,11 @@ Tentativi falliti sullo stesso problema e interventi umani:
 
 ## Checklist di review
 
-- [ ] Issue e artefatti pertinenti collegati. Per un task agentico, il TM ha approvato il piano prima delle modifiche.
-- [ ] Modifiche coerenti con requisiti e modelli approvati, entro l’ambito autorizzato.
+- [ ] Issue e artefatti pertinenti collegati; piano autorizzato prima delle modifiche (se task agentico).
+- [ ] Modifiche coerenti con requisiti e modelli approvati, nell'ambito del piano e delle aree consentite.
 - [ ] Test derivati dalla specifica; copertura dei Test Frame ed esiti effettivi riportati.
-- [ ] Modifiche a modelli e dipendenze approvate tramite PR umana e collegate quando pertinenti.
+- [ ] Modelli e contratti coerenti; eventuali modifiche documentali e nuove dipendenze approvate e gestite con contributi umani tracciati.
 - [ ] Nessun segreto/dato personale aggiunto e nessun test alterato per ottenere verde.
-- [ ] Il responsabile sa spiegare il risultato. Un Code Owner diverso dall’autore e, per una PR agentica, dal TM assegnato ha approvato lo SHA corrente.
+- [ ] responsabili assegnati capaci di spiegare il risultato; review indipendente di un utente Write non assegnato (PM o TM).
 
-<!-- Per task documentali o di governance, motivare i test applicativi N/A. Per il primo bootstrap, la CI esegue le verifiche e il report del Tester è facoltativo. Completa l’ultima casella dopo la review. -->
+<!-- Per task documentali, motivare UC/test applicativi N/A. L’ultima casella si completa dopo la review. -->
