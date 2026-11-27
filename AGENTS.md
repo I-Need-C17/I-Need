@@ -41,7 +41,16 @@ I sottosistemi funzionali del SDD sono Autenticazione, Gestione richieste abitat
 - Java: package in minuscolo, classi/interfacce PascalCase, metodi e attributi camelCase, costanti UPPER_SNAKE_CASE. Organizzare Control e Service per sottosistema e persistenza in repository/entity; rispettare le firme ODD. Evitare duplicazioni di DAO e Repository. Il package radice e la disposizione definitiva sono concordati nel bootstrap.
 - React: componenti e pagine PascalCase, file JSX omonimi; variabili, funzioni e moduli camelCase, hook con prefisso use. Usare Bootstrap e rispettare Boundary, mockup e navigazione. Le chiamate REST passano dai servizi frontend, non replicare logica di business nel browser. Nessuna introduzione di TypeScript o PWA senza decisione del team.
 - Python: moduli, funzioni e variabili snake_case, classi PascalCase, costanti UPPER_SNAKE_CASE. Separare API FastAPI, validazione Pydantic e calcolo della compatibilità secondo i contratti. Non introdurre accesso diretto al database. Sorgenti in ai-service/app/ o ai-service/src/ secondo il bootstrap approvato.
-- Test: backend/src/test/, frontend/tests/ o file .test/.spec e __tests__ in frontend/src/, ai-service/test/, ai-service/tests/ o ai-service/src/test/. Identificare i Test Frame coperti; test indipendenti, nessun cambio del codice applicativo da parte del Tester. Framework, percorsi dei report e comandi definitivi saranno fissati con il bootstrap.
+- Test: backend/src/test/, frontend/tests/ o file .test/.spec e __tests__ in frontend/src/, ai-service/test/, ai-service/tests/ o ai-service/src/test/. Anche i file Python test_*.py, *_test.py, conftest.py e le sottocartelle test/tests in ai-service/app/ e ai-service/src/ sono riservati al Tester. Identificare i Test Frame coperti; test indipendenti, nessun cambio del codice applicativo da parte del Tester. Framework, percorsi dei report e comandi definitivi saranno fissati con il bootstrap.
+
+### Design Pattern approvati (ODD)
+
+- **Façade**: le classi Service espongono l'interfaccia dei rispettivi sottosistemi. I Control invocano i Service, senza accesso diretto a repository o entity; le collaborazioni tra sottosistemi passano dai rispettivi Service. Le transazioni e il controllo per ruolo competono ai Service secondo l'ODD.
+- **Adapter**: MatchingService usa ModuloAIAdapter per convertire domande e risposte in DTO, serializzarle in JSON, inviare la richiesta HTTP POST al microservizio e convertire la risposta nel punteggio Double. Rispettare le firme approvate; non accoppiare direttamente MatchingService al formato del Modulo AI.
+
+Fonte: [Design Pattern ODD, sezioni 2.1 e 2.2](docs/odd/DesignPattern.md).
+
+Manifest, lockfile e configurazioni di build, runtime e infrastruttura (ad esempio application*.yml/properties, configurazioni Vite/Vitest, Nginx e Gunicorn) sono gestiti manualmente, anche se collocati in directory di codice o test. Le normali classi e i moduli di codice applicativo che implementano configurazioni restano modificabili nel perimetro autorizzato; non introdurre dipendenze o modifiche infrastrutturali senza intervento umano.
 
 ## Regole operative
 

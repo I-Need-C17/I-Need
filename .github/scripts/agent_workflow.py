@@ -71,7 +71,10 @@ def linked_issue(body):
 def test_path(path):
     return (path.startswith(("backend/src/test/", "frontend/tests/", "ai-service/test/", "ai-service/tests/", "ai-service/src/test/")) or
             (path.startswith("frontend/src/") and
-             ("/__tests__/" in path or re.search(r"\.(test|spec)\.[cm]?[jt]sx?$", path))))
+             ("/__tests__/" in path or re.search(r"\.(test|spec)\.[cm]?[jt]sx?$", path))) or
+            (path.startswith(("ai-service/app/", "ai-service/src/")) and
+             (any(part in {"test", "tests"} for part in PurePosixPath(path).parts[2:-1]) or
+              bool(re.fullmatch(r"(?:test_.*|.*_test|conftest)\.py", PurePosixPath(path).name)))))
 
 def permitted_path(phase, path, status):
     """Allow app/test paths only; manifests, models and workflow are human-owned."""
@@ -80,6 +83,18 @@ def permitted_path(phase, path, status):
             p in {".", ".."} or p.startswith(".") for p in parts):
         return False
     if re.search(r"(?i)(?:^|/)(?:AGENTS\.md|CLAUDE\.md|CODEOWNERS|package(?:-lock)?\.json|pom\.xml|pyproject\.toml|requirements[^/]*\.txt|constraints[^/]*\.txt|uv\.lock|poetry\.lock|Pipfile(?:\.lock)?|setup\.py|setup\.cfg|pytest\.ini|tox\.ini|Dockerfile[^/]*|compose[^/]*\.ya?ml)$", path):
+        return False
+    # Build, runtime and infrastructure configuration remains human-owned,
+    # even when located within an otherwise writable source/test directory.
+    if re.fullmatch(r"(?i)(?:application(?:-[^/]+)?\.(?:properties|ya?ml)|"
+                    r"bootstrap(?:-[^/]+)?\.(?:properties|ya?ml)|"
+                    r"logback(?:-spring|-test)?\.xml|nginx(?:-[^/]+)?\.conf|"
+                    r"(?:vite|vitest|jest|webpack|babel|rollup|postcss|tailwind|eslint|prettier)\.config\.[cm]?[jt]s|"
+                    r"tsconfig(?:\.[^/]+)?\.json|jsconfig\.json|"
+                    r"alembic\.ini|gunicorn\.conf\.py|uvicorn\.ya?ml|"
+                    r"sonar-project\.properties|yarn\.lock|pnpm-lock\.yaml|"
+                    r"build\.gradle(?:\.kts)?|settings\.gradle(?:\.kts)?|gradle\.properties)",
+                    parts[-1]):
         return False
     if re.search(r"(?i)\.(?:pdf|pem|key|p12|jks|jar|exe|sh|ps1|bat)$", path):
         return False

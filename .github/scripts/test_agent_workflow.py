@@ -42,6 +42,37 @@ class ScopeTests(unittest.TestCase):
             for phase in a.ROLE:
                 self.assertFalse(a.permitted_path(phase, path, "M"), (phase, path))
 
+    def test_python_colocated_tests_are_exclusive_to_tester(self):
+        for path in ("ai-service/app/test_matching.py", "ai-service/src/pkg/matching_test.py",
+                     "ai-service/app/conftest.py", "ai-service/app/pkg/tests/helpers.py",
+                     "ai-service/src/pkg/test/test_api.py"):
+            for status in ("A", "M", "D"):
+                self.assertFalse(a.permitted_path("implementazione", path, status), path)
+                self.assertFalse(a.permitted_path("correzione", path, status), path)
+                self.assertEqual(a.permitted_path("test", path, status), status != "D", path)
+        for path in ("ai-service/app/matching.py", "ai-service/src/pkg/testimony.py",
+                     "ai-service/app/config.py"):
+            self.assertTrue(a.permitted_path("implementazione", path, "A"), path)
+            self.assertFalse(a.permitted_path("test", path, "M"), path)
+
+    def test_nested_infrastructure_and_build_configuration_is_protected(self):
+        for path in ("backend/src/main/resources/application.yml",
+                     "backend/src/main/resources/application-prod.properties",
+                     "backend/src/test/resources/application-test.yaml",
+                     "backend/src/main/resources/bootstrap.properties",
+                     "backend/src/main/resources/logback-spring.xml",
+                     "frontend/public/nginx.conf", "frontend/src/vite.config.js",
+                     "frontend/tests/vitest.config.ts", "frontend/src/tsconfig.app.json",
+                     "frontend/src/pnpm-lock.yaml", "ai-service/app/gunicorn.conf.py",
+                     "ai-service/src/alembic.ini", "ai-service/tests/uvicorn.yaml",
+                     "backend/src/main/build.gradle.kts", "frontend/src/sonar-project.properties"):
+            for phase in a.ROLE:
+                for status in ("A", "M", "D"):
+                    self.assertFalse(a.permitted_path(phase, path, status), (phase, path, status))
+        for path in ("backend/src/main/java/SecurityConfig.java",
+                     "frontend/src/components/ConfigPanel.jsx", "ai-service/app/config.py"):
+            self.assertTrue(a.permitted_path("implementazione", path, "M"), path)
+
     def test_non_regular_files_rejected(self):
         with patch.object(a, "git", side_effect=["A\0frontend/src/link.jsx\0", "120000 x"]):
             with self.assertRaises(ValueError):
