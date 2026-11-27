@@ -1,0 +1,20 @@
+name: Agente su richiesta
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  actions: write
+
+jobs:
+  fase:
+    if: ${{ github.repository == 'I-Need-C17/I-Need' && github.event.sender.type == 'User' && ((github.event.issue.pull_request && (startsWith(github.event.comment.body, 'AGENTE CORREGGI:') || startsWith(github.event.comment.body, 'AGENTE TEST:'))) || (!github.event.issue.pull_request && (startsWith(github.event.comment.body, 'AGENTE PIANO:')))) }}
+    uses: ./.github/workflows/esegui-fase.yml
+    with:
+      phase: ${{ !github.event.issue.pull_request && 'piano' || startsWith(github.event.comment.body, 'AGENTE TEST:') && 'test' || 'correzione' }}
+    secrets:
+      COPILOT_GITHUB_TOKEN: ${{ secrets.COPILOT_GITHUB_TOKEN }}

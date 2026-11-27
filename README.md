@@ -1,118 +1,41 @@
-# I-Need (C-17)
+# I-Need — Team C17
 
-Progetto GPS/IS dell’Università di Salerno per la coabitazione solidale.
-Lo stack previsto è React/Bootstrap per il frontend, Java/Spring Boot e
-PostgreSQL per il backend, Python/FastAPI per il servizio AI. Versioni,
-dipendenze e comandi definitivi seguiranno l’approvazione dell’SDD.
+Progetto GPS/IS dell'Università di Salerno per la coabitazione solidale tra Host e Guest, con supervisione degli Operator.
 
-- [frontend](frontend/), [backend](backend/) e [ai-service](ai-service/) ospitano i componenti applicativi.
-- [Indice delle fonti](docs/README.md) raccoglie i riferimenti al RAD, all’SDD e ai test.
-- [Regole comuni](AGENTS.md) e [profili degli agenti](.github/agents/) definiscono compiti e limiti.
+## Struttura
 
-Usa Copilot CLI per i quattro ruoli e comandi deterministici per i controlli.
+- [frontend/](frontend/): SPA React/Bootstrap.
+- [backend/](backend/): Java/Spring Boot, Spring Data JPA e PostgreSQL.
+- [ai-service/](ai-service/): Python/FastAPI per il calcolo della compatibilità.
+- [docs/](docs/): RAD, SDD, ODD, modelli, contratti e specifiche di testing; consultare l'[indice](docs/README.md).
+- [AGENTS.md](AGENTS.md): contesto, convenzioni e regole comuni.
+- [.github/agents/](.github/agents/): Pianificatore, Implementatore, Tester e Revisore.
+- [Template task agente](.github/ISSUE_TEMPLATE/task-agente.yml), [task manuale](.github/ISSUE_TEMPLATE/task-documentale.yml) e [template PR](.github/pull_request_template.md).
 
-## Dalla Issue al merge
+I tre componenti non sono ancora inizializzati. Il bootstrap definirà versioni, manifest, dipendenze e modalità di avvio conformi al SDD; la CI applicativa sarà estesa progressivamente.
 
-1. Il **PM** apre una [Issue Task agente](.github/ISSUE_TEMPLATE/task-agente.yml),
-   assegna un solo TM, aggiunge la label di area e applica `fase:piano`.
-   Il Pianificatore legge il checkout della snapshot di `main` in sola lettura
-   e pubblica il piano in Markdown sulla Issue.
-2. Il **TM assegnato** verifica il piano e lo approva in un nuovo commento.
-   Poi rimuove `fase:piano` e applica `fase:implementazione`. L’Implementatore
-   verifica l’approvazione, modifica i file autorizzati, esegue i controlli
-   disponibili e apre la Draft PR `agent/issue-N-implementazione` con `Closes #N`.
-3. Il **TM** applica `fase:test` sulla Draft PR. Il Tester indipendente deriva
-   i test dai frame, esegue le verifiche disponibili e pubblica un report
-   sullo SHA risultante. Per una PR documentale o di governance
-   registra **N/A** per i test applicativi.
-4. Il **TM** controlla il diff e il report del Tester, quindi seleziona **Ready
-   for review**. La CI `repository-checks` verifica il contenuto della PR.
-   Il Revisore AI pubblica un report sullo SHA esaminato.
-5. Un **Code Owner umano diverso dall’autore** esamina la PR dopo i report
-   e la approva sul commit corrente. Per le PR agentiche il revisore è
-   anche diverso dal TM assegnato. `governance-gate` verifica review,
-   report e run associati. Il **PM** fa il merge dopo i controlli richiesti.
+## Flusso di lavoro
 
-L’approvazione del piano spetta al TM assegnato con almeno Write. Il commento
-deve seguire la versione vigente del piano ed elencare uno per riga i soli
-file necessari tra i candidati della Issue. L’ID del commento del piano è
-facoltativo. Se presente, deve riferirsi alla versione vigente.
+1. Un PM o TM con Write crea una Issue, assegna uno o più responsabili e applica `fase:piano`.
+2. Il Pianificatore verifica anche la coerenza dei modelli e pubblica il piano. Un collaboratore Write lo verifica e applica `fase:implementazione` per autorizzare.
+3. L'Implementatore crea il branch del task e la Draft PR, assegnata ai responsabili della Issue; il runner pubblica le modifiche e avvia la CI.
+4. Applicare `fase:test`. Il Tester indipendente deriva i test dalle specifiche, avvia o riusa la CI sul commit corrente, attende l'esito e pubblica il recap reale. Prima del bootstrap i test applicativi non sono eseguiti.
+5. Verificare CI, test e Test Frame. Selezionare Ready for review; il Revisore AI è consultivo, si avvia anche per PR interne aperte Ready e per nuovi commit su PR non Draft.
+6. Una persona Write diversa dall'autore e dai responsabili esamina e approva il commit corrente. Attendere la CI finale `repository-checks`, poi merge manuale.
 
-```text
-APPROVO PIANO
-File autorizzati:
-- README.md
-```
+Per iterazioni usare `AGENTE PIANO:` sulla Issue, `AGENTE CORREGGI:` e `AGENTE TEST:` sulla PR. Se il piano cambia dopo l'apertura della PR, indicare anche `PIANO APPROVATO: ID` nella richiesta di correzione. Vedi la [guida operativa](docs/agentic-workflow-iterazioni.md).
 
-## Compilare la Issue
+I commit agentici sono attribuiti al bot con Copilot coautore; l'assegnatario che avvia implementazione, test o correzione è coautore automatico. Tutti i responsabili, il richiedente e il run restano tracciati. Avviare la fase come assegnatario implica aver contribuito al task; l'attribuzione tecnica non prova da sola il contributo.
 
-- Usa una sola label `area:frontend`, `area:backend` o `area:ai-service`.
-  Indica obiettivo, comportamento atteso, limiti e dipendenze pertinenti.
-- Nel campo **File** usa `File: percorso` per i candidati e `Test: percorso`
-  per i test nuovi. Usa percorsi relativi esatti. I sorgenti agentici stanno
-  in `src/` o `app/` dell’area. Il Tester usa `backend/src/test/`,
-  `frontend/tests/` o file `.test.*` e `.spec.*` in `frontend/src/`, e
-  `ai-service/test/`, `ai-service/tests/` o `ai-service/src/test/`.
-- In **Fonti e frame** indica `Requisito: ID` e `Riferimento: percorso` per le
-  fonti testuali UTF-8 versionate. Sono disponibili anche `UC:`, `Sequence:`, `Class:`,
-  `Firme:` e `Modello:`. Per il Tester aggiungi `CP: percorso`,
-  `TF: percorso` (file distinti in `docs/test/`) e una riga `Frame: ID`
-  per ogni frame pertinente.
-- Per attività documentali usa `Riferimento: percorso` oppure `N/A - motivo`.
-  L’Implementatore può modificare README, l’indice delle fonti e le guide
-  Markdown in `docs/guide/`. Modelli, dipendenze e configurazione passano
-  da PR umane.
+Lo sviluppo manuale è supportato con branch, Issue/PR, verifiche e review umana indipendente. I PM caricano ODD e diagrammi; i TM caricano Category Partition, Test Frame e Test Case con task documentali manuali. Manifest, configurazioni, workflow e artefatti approvati sono gestiti da contributi umani tracciati.
 
-## Ripianificazione e correzione
+## Configurazione
 
-- Con `fase:piano` sulla Issue, il TM può pubblicare
-  `RICHIESTA REVISIONE PIANO:` seguito dal feedback. Attende la nuova
-  versione e la approva con un nuovo commento.
-- Sulla Draft PR il TM usa `RICHIESTA CORREZIONE TM:` per correggere il
-  lavoro entro il perimetro approvato. Se la PR è già in review, la riporta
-  in Draft. Dopo la correzione rimuove e riapplica `fase:test`, verifica
-  il nuovo report e seleziona di nuovo **Ready for review**.
-- Dopo tre richieste valide si ferma il ciclo. Per modifiche ai requisiti
-  o al perimetro, il TM segnala il blocco e il PM apre una nuova Issue
-  quando la nuova attività è definita.
+- [.github/workflows/esegui-fase.yml](.github/workflows/esegui-fase.yml): runner condiviso; generazione e pubblicazione separate.
+- [.github/scripts/agent_workflow.py](.github/scripts/agent_workflow.py): contesto, autorizzazioni, perimetro, commit e pubblicazione.
+- [.github/workflows/ci.yml](.github/workflows/ci.yml): CI indipendente, inizialmente strutturale (whitespace, YAML, link Markdown, test del workflow, sintassi script).
+- [.github/scripts/verify-project.sh](.github/scripts/verify-project.sh): punto di estensione per i controlli applicativi del bootstrap.
+- Secret repository: `COPILOT_GITHUB_TOKEN`. Nessun token Copilot al codice applicativo.
+- Protezioni previste per main: PR, approvazione umana, revoca delle approvazioni obsolete, conversazioni risolte, `repository-checks`, blocco force push e cancellazione; CODEOWNERS indica i reviewer. Mai merge automatico o bypass per eludere verifiche.
 
-## CI e bootstrap
-
-`repository-checks` verifica diff, workflow, collegamenti Markdown e
-regressioni del controllo di approvazione. Per backend e frontend prevede rispettivamente
-`mvn -B verify` e `npm ci`, `npm run build`, `npm run test:ci`,
-quando le PR di bootstrap approvano i manifest, i lockfile e le versioni.
-Il bootstrap del servizio AI introdurrà i comandi Python approvati
-nell’[azione condivisa](.github/actions/verifiche-app/action.yml).
-Fino al bootstrap, i componenti senza manifest risultano **N/A**.
-Una PR applicativa usa `Closes #N` o `Fixes #N`. Per la prima PR che
-introduce il manifest di un componente, il gate richiede CI, report del
-Revisore e approvazione umana. Il report del Tester applicativo è
-facoltativo. La PR di bootstrap Python può aggiornare anche l’azione
-condivisa per introdurre i comandi approvati.
-
-## Configurazione GitHub e collaudo
-
-- I team `project-managers` e `tech-members` servono a
-  [CODEOWNERS](.github/CODEOWNERS). Verificare che abbiano accesso Write.
-  Il PM avvia `fase:piano` con Maintain o Admin.
-- Abilitare in GitHub Actions la creazione delle Draft PR. Configurare
-  il secret `COPILOT_GITHUB_TOKEN` nell’ambiente `copilot-student`,
-  limitato a `main`. Test e Revisione usano i trigger su PR interne
-  con configurazione del branch base. Le label e **Ready for review**
-  sono passaggi umani, anche quando la PR è aperta dal bot.
-- Sul ruleset di `main` richiedere PR, approvazione del Code Owner,
-  revoca delle approvazioni obsolete, risoluzione delle conversazioni
-  e `repository-checks`. Aggiungere `governance-gate` dopo il collaudo
-  e verificare che entrambi i check provengano da GitHub Actions.
-  Bloccare cancellazioni e force push. Per riservare tecnicamente il merge
-  ai PM, usare una regola separata **Restrict updates** con il team PM
-  abilitato **For pull requests only**.
-- Dopo l’aggiornamento di `main`, aprire una nuova Issue documentale
-  di collaudo e applicare `fase:piano`. La prova deve arrivare fino
-  alla Draft PR, al Tester e al Revisore. Se la modifica è temporanea,
-  chiudere la PR dopo la review e verificare il merge protetto con una
-  successiva PR destinata a restare.
-- Se il gate parte prima della conclusione di un run, attendere i report
-  sullo SHA esatto e la review umana. Se serve, rieseguire il gate dopo
-  che le evidenze sono disponibili.
+La CI parte sui push manuali, dopo i commit agentici e sulla review umana finale. La CI strutturale non costituisce una verifica applicativa: i componenti vuoti sono N/A; eventuali componenti inizializzati senza CI applicativa risultano non eseguiti. Con il bootstrap integrare Maven, npm, Python, PostgreSQL/Compose, report di test, coverage e SonarQube Cloud (progetto dedicato, variabili SONAR_PROJECT_KEY e SONAR_ORGANIZATION e secret SONAR_TOKEN, da configurare successivamente).

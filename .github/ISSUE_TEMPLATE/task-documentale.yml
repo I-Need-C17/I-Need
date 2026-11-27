@@ -1,0 +1,26 @@
+name: Task documentale o manuale
+description: Attività da svolgere senza agenti (documenti, modelli, configurazione o bootstrap).
+title: "[DOCS] "
+labels: ["documentation"]
+body:
+  - type: textarea
+    id: obiettivo
+    attributes:
+      label: Obiettivo e ambito
+      description: Descrivere artefatti da produrre o aggiornare e responsabilità.
+    validations:
+      required: true
+  - type: textarea
+    id: fonti
+    attributes:
+      label: Fonti e riferimenti
+      description: Indicare documenti, requisiti, versioni e percorsi pertinenti; N/A motivato per setup tecnico.
+    validations:
+      required: true
+  - type: textarea
+    id: accettazione
+    attributes:
+      label: Criteri di accettazione
+      description: Indicare verifiche, evidenze e review previste. Non applicare label di fase se il task è manuale.
+    validations:
+      required: true
