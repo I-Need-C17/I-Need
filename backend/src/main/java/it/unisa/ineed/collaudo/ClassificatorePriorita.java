@@ -15,6 +15,6 @@ public class ClassificatorePriorita {
             throw new IllegalArgumentException();
         }
 
-        return punteggio <= 6 ? Priorita.NORMALE : Priorita.ALTA;
+        return punteggio <= 7 ? Priorita.NORMALE : Priorita.ALTA;
     }
 }
