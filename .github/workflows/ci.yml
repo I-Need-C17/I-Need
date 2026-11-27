@@ -21,6 +21,8 @@ jobs:
     timeout-minutes: 30
     outputs:
       backend: ${{ steps.report.outputs.backend }}
+      backend_failed: ${{ steps.report.outputs.backend_failed }}
+      maven: ${{ steps.maven.outcome }}
       frontend: ${{ steps.report.outputs.frontend }}
       ai_service: ${{ steps.report.outputs.ai_service }}
     permissions:
@@ -73,15 +75,25 @@ jobs:
         run: |
           python3 -m unittest discover -s .github/scripts -p 'test_*.py' -v
           bash -n .github/scripts/verify-project.sh
-      - name: Riepilogo CI iniziale (nessun test applicativo)
+      # Temporary Java-only harness for issue #30. Never merge this branch.
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Maven (compilazione e test Java)
+        id: maven
+        run: |
+          set -euo pipefail
+          if [[ -d backend/src/test/java ]] && [[ -n "$(find backend/src/test/java -name '*.java' -type f -print -quit)" ]]; then
+            mvn -B -ntp -f backend/pom.xml clean test -DfailIfNoTests=true
+          else
+            echo 'Nessun test ancora presente: sola compilazione.'
+            mvn -B -ntp -f backend/pom.xml clean compile
+          fi
+      - name: Riepilogo collaudo Java (report JUnit effettivi)
         id: report
         if: always() && !cancelled()
-        run: |
-          if [[ -f .github/scripts/verify-project.sh ]]; then
-            bash .github/scripts/verify-project.sh
-          else
-            echo 'Report non disponibile: checkout o preparazione falliti.' >> "$GITHUB_STEP_SUMMARY"
-          fi
+        run: python3 .github/scripts/verify-collaudo.py
 
   report-pr:
     needs: repository-checks
@@ -100,6 +112,8 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           CHECK_RESULT: ${{ needs.repository-checks.result }}
           BACKEND: ${{ needs.repository-checks.outputs.backend }}
+          BACKEND_FAILED: ${{ needs.repository-checks.outputs.backend_failed }}
+          MAVEN: ${{ needs.repository-checks.outputs.maven }}
           FRONTEND: ${{ needs.repository-checks.outputs.frontend }}
           AI_SERVICE: ${{ needs.repository-checks.outputs.ai_service }}
         run: |
@@ -111,15 +125,17 @@ jobs:
           safe_counts() {
             case "$1" in
               'N/A (componente non inizializzato)'|'Non eseguito (CI applicativa da configurare)') printf '%s' "$1";;
-              *) printf 'Non disponibile';;
+              *) if [[ "$1" =~ ^[0-9]+\ superati,\ [0-9]+\ falliti/errori,\ [0-9]+\ saltati$ ]]; then printf '%s' "$1"; else printf 'Non disponibile'; fi;;
             esac
           }
           safe_status() {
             case "$1" in success|failure|skipped|cancelled) printf '%s' "$1";; *) printf 'non eseguito';; esac
           }
+          FAILED_NAMES=$(printf '%s' "$BACKEND_FAILED" | tr '\r\n' ' ' | cut -c1-1900)
+          FAILED_NAMES=${FAILED_NAMES:-Nessuno riportato}
           marker='<!-- ineed-ci-summary -->'
-          body=$(printf '%s\n## CI I-Need - %s\n\nCommit: `%s`\n\nModalità: controlli strutturali (nessun test applicativo eseguito).\n\n- Backend: %s\n- Frontend: %s\n- AI service: %s\n- PostgreSQL: non eseguito\n- Maven (build/test): non eseguito\n- Build frontend: non eseguito\n- Vitest: non eseguito\n- Audit npm: non eseguito\n- Python (test): non eseguito\n- Analisi SonarQube: non eseguito\n\n[Dettagli e report](https://github.com/%s/actions/runs/%s). I controlli applicativi saranno configurati durante il bootstrap.\n' \
-            "$marker" "$(safe_status "$CHECK_RESULT")" "$HEAD_SHA" "$(safe_counts "$BACKEND")" "$(safe_counts "$FRONTEND")" "$(safe_counts "$AI_SERVICE")" "$REPO" "$GITHUB_RUN_ID")
+          body=$(printf '%s\n## CI I-Need - %s\n\nCommit: `%s`\n\nModalità: collaudo temporaneo Java/JUnit (Issue #30); se non sono presenti test, solo compilazione.\n\n- Backend: %s\n- Test backend falliti: %s\n- Frontend: %s\n- AI service: %s\n- PostgreSQL: non eseguito\n- Maven (build/test): %s\n- Build frontend: non eseguito\n- Vitest: non eseguito\n- Audit npm: non eseguito\n- Python (test): non eseguito\n- Analisi SonarQube: non eseguito\n\n[Dettagli e report](https://github.com/%s/actions/runs/%s). Configurazione temporanea di prova: non integrare su main.\n' \
+            "$marker" "$(safe_status "$CHECK_RESULT")" "$HEAD_SHA" "$(safe_counts "$BACKEND")" "$FAILED_NAMES" "$(safe_counts "$FRONTEND")" "$(safe_counts "$AI_SERVICE")" "$(safe_status "$MAVEN")" "$REPO" "$GITHUB_RUN_ID")
           comment=$(gh api --paginate "repos/$REPO/issues/$pr/comments?per_page=100" --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ineed-ci-summary -->"))) | .id' | tail -n 1)
           [[ "$(gh api "repos/$REPO/pulls/$pr" --jq .head.sha)" == "$HEAD_SHA" ]] || exit 0
           if [[ -n "$comment" ]]; then
